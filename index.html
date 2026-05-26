@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Connexion - Gestionnaire de Stage</title> 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="icon" type="image/png" href="./images/logo-noir-blanc.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="d-flex flex-column min-vh-100 bg-dark text-white">
+    <header class="navbar navbar-expand-lg bg-intranet-dark text-white p-0 py-2 border-bottom border-secondary">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4" href="./php/redirection.php" style="height: 100%;">
+                <img src="./images/logo-noir-blanc.png" alt="Logo" class="me-3" style="height: 50px; width: auto;"> 
+                <div class="lh-sm">
+                    <div class="fw-bold text-uppercase" style="font-size: 1.1rem; letter-spacing: 1px;">
+                        GESTIONNAIRE DE STAGE
+                    </div>
+                    <div class="text-muted-custom" style="font-size: 0.8rem; letter-spacing: 0.5px;">
+                        UNIVERSITÉ GUSTAVE EIFFEL
+                    </div>
+                </div>
+            </a>
+        </div>
+    </header>
+    <main class="container d-flex flex-grow-1 align-items-center justify-content-center py-5">
+        <div class="card-custom p-4 w-100" style="max-width: 450px;">
+            <div class="text-center mb-4">
+                <i class="bi bi-shield-lock text-purple fs-1"></i>
+                <h3 class="mt-2 fw-bold text-uppercase" style="letter-spacing: 1px;">Connexion</h3>
+                <p class="text-muted-custom small">Accédez à votre espace de gestion de stage</p>
+            </div>
+            <form id="loginForm" action="./php/connexion_action.php" method="POST">
+                <div class="mb-3">
+                    <label for="email" class="form-label text-muted-custom small fw-bold">email</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary text-muted-custom"><i class="bi bi-envelope"></i></span>
+                        <input type="email" id="email" name="email" class="form-control bg-dark text-white border-secondary" required placeholder="nom@univ-eiffel.fr">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label text-muted-custom small fw-bold">mot de passe</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary text-muted-custom"><i class="bi bi-lock"></i></span>
+                        <input type="password" id="password" name="password" class="form-control bg-dark text-white border-secondary" required placeholder="••••••••">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-purple w-100 fw-bold text-uppercase py-2 mb-3" style="letter-spacing: 1px;">Se connecter</button>
+                <div class="text-center mt-3">
+                    <p class="small text-muted-custom m-0">Vous n'avez pas encore de compte ?</p>
+                    <a href="inscription.html" class="text-purple small text-decoration-none fw-bold">Créer un compte <i class="bi bi-arrow-right ms-1"></i></a>
+                </div>
+            </form>
+        </div>
+    </main>
+    <footer class="bg-black text-white py-2 border-top border-secondary">
+        <div class="container-fluid px-4">
+            <div class="row align-items-center">
+                <div class="col-12 text-start">
+                    <p class="m-0 text-muted-custom" style="font-size: 0.85rem; font-family: sans-serif;">
+                        &copy; 2026 Université Gustave Eiffel - Tom Pelloile - Robin Maréchal - Emerick Angel
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>

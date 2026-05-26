@@ -1,0 +1,163 @@
+.bg-intranet-dark {
+    background-color: #000000; /* Couleur du background */
+}
+
+/* Liens de navigation grands et espacés */
+.nav-link-custom {
+    color: #ffffff !important; /* Couleur du texte */
+    font-size: 1.2rem !important; /* Texte plus grand */
+    padding: 1rem 2rem !important; /* Plus d'espace interne */
+    transition: background-color 0.2s;
+}
+
+.nav-link-custom:hover, .nav-link-custom.active {
+    background-color: #0a192f;  /* Couleur du background de la nav-bar */
+}
+
+.text-muted-custom {
+    color: #a0aab2;
+}
+
+/* Ajustement des séparateurs verticaux à droite */
+.separator-right {
+    border-left: 1px solid #333;
+}
+
+/* Styles spécifiques au Dashboard */
+.card-custom {
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    transition: transform 0.2s;
+}
+
+.card-custom:hover {
+    border-color: #8b5cf6; /* Accent violet au survol */
+}
+
+.btn-purple {
+    background-color: #6d28d9;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+}
+
+.btn-purple:hover {
+    background-color: #5b21b6;
+    color: white;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid #22c55e;
+    color: #22c55e;
+}
+
+.app-icon {
+    width: 60px;
+    height: 60px;
+    background-color: #30363d;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    font-size: 1.5rem;
+}
+
+/* 
+==========================================================================
+Formulaire d'Inscription
+========================================================================== 
+*/
+
+/* Personnalisation des champs de saisie et des listes déroulantes */
+.form-control, 
+.form-select {
+    background-color: #0d1117 !important;
+    color: #ffffff !important;
+    border: 1px solid #30363d !important;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Style lors du clic/focus sur un champ */
+.form-control:focus, 
+.form-select:focus {
+    background-color: #0d1117 !important;
+    color: #ffffff !important;
+    border-color: #8b5cf6 !important; /* Lueur violette assortie au survol des cartes */
+    box-shadow: 0 0 0 0.25rem rgba(139, 92, 246, 0.25) !important;
+}
+
+/* Ajustement de l'icône du calendrier pour les inputs de type date */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1); /* Rend l'icône blanche pour le thème sombre */
+    cursor: pointer;
+}
+
+/* Style de l'affichage des sections de rôles dynamiques */
+.role-fields {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Style du placeholder pour les navigateurs modernes (Chrome, Firefox, Safari, Edge) */
+.form-control::placeholder {
+    color: #a0aab2 !important; /* Utilise la même couleur claire que vos labels text-muted-custom */
+    opacity: 0.75 !important;  /* Augmente l'opacité pour qu'il ressorte mieux */
+    font-style: italic;        /* Optionnel : met en italique pour bien le différencier d'un texte déjà saisi */
+}
+
+/* Compatibilité pour Internet Explorer / Edge plus anciens */
+.form-control:-ms-input-placeholder {
+    color: #a0aab2 !important;
+    opacity: 0.75 !important;
+    font-style: italic;
+}
+
+/* Structure de la carte élargie pour le tableau */
+.card-custom {
+    background-color: #1a1a1a; /* Teinte sombre légèrement plus claire que le bg-dark */
+    border: 1px solid #2d2d2d;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Alignement et bordures du tableau */
+.custom-table-da {
+    --bs-table-bg: transparent !important; /* Utilise le fond de la carte */
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.03) !important;
+    border-color: #2d2d2d;
+}
+
+.custom-table-da th, 
+.custom-table-da td {
+    border-bottom: 1px solid #2d2d2d;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+/* Encapsulation propre des mots de passe (style code) */
+.text-info-custom {
+    color: #a5d6ff;
+    background-color: rgba(165, 214, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: var(--bs-font-monospace);
+    font-size: 0.9rem;
+}
+
+/* Badges distinctifs pour le type de compte */
+.bg-admin-tag {
+    background-color: rgba(248, 113, 113, 0.15) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.bg-student-tag {
+    background-color: rgba(156, 163, 175, 0.15) !important;
+    color: #d1d5db !important;
+    border: 1px solid rgba(156, 163, 175, 0.3);
+}
