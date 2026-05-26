@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Créer un Administrateur - G-Stage</title> 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body class="d-flex flex-column min-vh-100 bg-dark text-white">
+    <header class="navbar navbar-expand-lg bg-intranet-dark text-white p-0 py-2 border-bottom border-secondary">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4" href="../index.html">
+                <img src="../images/logo-noir-blanc.png" alt="Logo" class="me-3" style="height: 50px; width: auto;"> 
+                <div class="lh-sm">
+                    <div class="fw-bold text-uppercase">G-Stage</div>
+                    <div class="small text-muted-custom" style="font-size: 0.75rem;">Initialisation Admin</div>
+                </div>
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-grow-1 d-flex align-items-center justify-content-center py-5">
+        <div class="card-custom p-4 w-100" style="max-width: 500px;">
+            <h2 class="text-center text-purple mb-4"><i class="bi bi-shield-lock-fill"></i> Nouvel Administrateur</h2>
+            
+            <form id="adminForm" action="inscription-admin-action.php" method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="nom" class="form-label small fw-bold text-muted-custom">Nom</label>
+                        <input type="text" id="nom" name="nom" class="form-control" required placeholder="Dupont">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="prenom" class="form-label small fw-bold text-muted-custom">Prénom</label>
+                        <input type="text" id="prenom" name="prenom" class="form-control" required placeholder="Jean">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="tel" class="form-label small fw-bold text-muted-custom">Téléphone</label>
+                    <input type="tel" id="tel" name="tel" class="form-control" placeholder="0601020304">
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label small fw-bold text-muted-custom">Adresse Email</label>
+                    <input type="email" id="email" name="email" class="form-control" required placeholder="admin@univ-eiffel.fr">
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label small fw-bold text-muted-custom">Mot de passe</label>
+                    <input type="password" id="password" name="password" class="form-control" required placeholder="••••••••">
+                </div>
+
+                <div class="mb-4">
+                    <label for="confirm_password" class="form-label small fw-bold text-muted-custom">Confirmer le mot de passe</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" required placeholder="••••••••">
+                    <div id="error-msg" class="text-danger small mt-2" style="display: none;">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Les mots de passe ne correspondent pas.
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-purple w-100 fw-bold text-uppercase py-2 mb-3">Créer le compte Admin</button>
+            </form>
+        </div>
+    </main>
+
+    <footer class="bg-black text-white py-2 border-top border-secondary mt-auto">
+        <div class="container-fluid px-4">
+            <p class="m-0 text-muted-custom small">&copy; 2026 Université Gustave Eiffel</p>
+        </div>
+    </footer>
+
+    <script>
+        // Vérification dynamique de la correspondance des mots de passe
+        document.getElementById('adminForm').addEventListener('submit', function(e) {
+            const pass = document.getElementById('password').value;
+            const confirmPass = document.getElementById('confirm_password').value;
+            const error = document.getElementById('error-msg');
+
+            if (pass !== confirmPass) {
+                e.preventDefault();
+                error.style.display = 'block';
+            } else {
+                error.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
