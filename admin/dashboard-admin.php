@@ -34,7 +34,7 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <title>Validation des Comptes - Administration</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="icon" type="image/png" href="../images/logo-noir-blanc.png">
@@ -78,17 +78,17 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
 
         <ul class="nav nav-tabs border-secondary mb-4" id="validationTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active text-white border-secondary bg-transparent fw-bold" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab">
+                <button class="nav-link active text-white border-secondary bg-transparent fw-bold" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab" aria-controls="students" aria-selected="true">
                     Étudiants <span class="badge bg-purple ms-1"><?= count($etudiants) ?></span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link text-white border-secondary bg-transparent fw-bold" id="teachers-tab" data-bs-toggle="tab" data-bs-target="#teachers" type="button" role="tab">
+                <button class="nav-link text-white border-secondary bg-transparent fw-bold" id="teachers-tab" data-bs-toggle="tab" data-bs-target="#teachers" type="button" role="tab" aria-controls="teachers" aria-selected="false">
                     Enseignants <span class="badge bg-purple ms-1"><?= count($enseignants) ?></span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link text-white border-secondary bg-transparent fw-bold" id="tutors-tab" data-bs-toggle="tab" data-bs-target="#tutors" type="button" role="tab">
+                <button class="nav-link text-white border-secondary bg-transparent fw-bold" id="tutors-tab" data-bs-toggle="tab" data-bs-target="#tutors" type="button" role="tab" aria-controls="tutors" aria-selected="false">
                     Maîtres de Stage <span class="badge bg-purple ms-1"><?= count($maitres) ?></span>
                 </button>
             </li>
@@ -96,7 +96,7 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
 
         <div class="tab-content" id="validationTabsContent">
             
-            <div class="tab-pane fade show active" id="students" role="tabpanel">
+            <div class="tab-pane fade show active" id="students" role="tabpanel" aria-labelledby="students-tab">
                 <?php if (empty($etudiants)): ?>
                     <div class="card-custom p-4 text-center text-muted-custom small">
                         <i class="bi bi-info-circle me-2"></i>Aucune demande d'inscription d'étudiant.
@@ -146,7 +146,7 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
                 <?php endif; ?>
             </div>
 
-            <div class="tab-pane fade" id="teachers" role="tabpanel">
+            <div class="tab-pane fade" id="teachers" role="tabpanel" aria-labelledby="teachers-tab">
                 <?php if (empty($enseignants)): ?>
                     <div class="card-custom p-4 text-center text-muted-custom small">
                         <i class="bi bi-info-circle me-2"></i>Aucune demande d'inscription d'enseignant.
@@ -184,7 +184,7 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
                 <?php endif; ?>
             </div>
 
-            <div class="tab-pane fade" id="tutors" role="tabpanel">
+            <div class="tab-pane fade" id="tutors" role="tabpanel" aria-labelledby="tutors-tab">
                 <?php if (empty($maitres)): ?>
                     <div class="card-custom p-4 text-center text-muted-custom small">
                         <i class="bi bi-info-circle me-2"></i>Aucune demande d'inscription de maître de stage.
@@ -208,7 +208,7 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
                                             <td class="fw-bold"><?= htmlspecialchars($m['nom'] . ' ' . $m['prenom']) ?></td>
                                             <td><?= htmlspecialchars($m['email_pro']) ?></td>
                                             <td><?= htmlspecialchars($m['tel'] ?? 'Non renseigné') ?></td>
-                                            <td><i class="bi bi-building"></i> <?= htmlspecialchars($m['nom_societe'] ?? 'ID Entreprise: n°1') ?></td>
+                                            <td><i class="bi bi-building"></i> <?= htmlspecialchars($m['nom_societe'] ?? 'Non spécifiée') ?></td>
                                             <td class="text-end">
                                                 <div class="btn-group">
                                                     <a href="../php/valider_compte.php?id=<?= $m['id_maitre'] ?>&type=maitre&action=accepter" class="btn btn-sm btn-success" title="Accepter"><i class="bi bi-check-lg"></i></a>
@@ -238,5 +238,7 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </footer>
-    </body>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
