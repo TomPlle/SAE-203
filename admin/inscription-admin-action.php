@@ -45,6 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 } else {
     // Si le script est appelé hors POST, on redirige
-    header("Location: creer-admin.html");
+    header("Location: creer-admin.php");
     exit();
 }

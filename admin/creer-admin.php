@@ -1,3 +1,21 @@
+<?php
+session_start();
+
+// 1. Sécurité : Vérifier si l'utilisateur est bien connecté en tant qu'admin
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    header("Location: index.html");
+    exit();
+}
+
+require_once '../php/config.php';
+
+try {
+    $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8", DB_USER, DB_PASS);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Erreur de connexion à la base de données : " . $e->getMessage());
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -10,13 +28,35 @@
 <body class="d-flex flex-column min-vh-100 bg-dark text-white">
     <header class="navbar navbar-expand-lg bg-intranet-dark text-white p-0 py-2 border-bottom border-secondary">
         <div class="container-fluid px-4">
-            <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4" href="../index.html">
+            <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4 border-end border-secondary" href="dashboard-admin.php" style="height: 100%;">
                 <img src="../images/logo-noir-blanc.png" alt="Logo" class="me-3" style="height: 50px; width: auto;"> 
                 <div class="lh-sm">
-                    <div class="fw-bold text-uppercase">G-Stage</div>
-                    <div class="small text-muted-custom" style="font-size: 0.75rem;">Initialisation Admin</div>
+                    <div class="fw-bold text-uppercase" style="font-size: 1.1rem; letter-spacing: 1px;">ESPACE ADMIN</div>
+                    <div class="text-muted-custom" style="font-size: 0.8rem; letter-spacing: 0.5px;">UNIVERSITÉ GUSTAVE EIFFEL</div>
                 </div>
             </a>
+            <div class="collapse navbar-collapse justify-content-between">
+                <ul class="navbar-nav mx-auto align-items-stretch border-start border-end border-secondary">
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="dashboard-admin.php">
+                            <i class="bi bi-speedometer2 me-2 fs-4"></i> Vue globale
+                        </a>
+                    </li>
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="suivi-etudiant.php">
+                            <i class="bi bi-person-lines-fill me-2 fs-4"></i> Suivi Étudiants
+                        </a>
+                    </li>
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom active d-flex align-items-center" href="creer-admin.php">
+                            <i class="bi bi-person-lines-fill me-2 fs-4"></i> Créer un administrateur
+                        </a>
+                    </li>
+                </ul>
+                <div class="ms-2 pe-3">
+                    <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -66,7 +106,7 @@
 
     <footer class="bg-black text-white py-2 border-top border-secondary mt-auto">
         <div class="container-fluid px-4">
-            <p class="m-0 text-muted-custom small">&copy; 2026 Université Gustave Eiffel</p>
+            <p class="m-0 text-muted-custom small">&copy; 2026 Université Gustave Eiffel - Tom Pelloile - Robin Maréchal - Emerick Angel</p>
         </div>
     </footer>
 

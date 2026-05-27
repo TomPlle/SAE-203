@@ -216,6 +216,11 @@ $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col
                             <i class="bi bi-person-lines-fill me-2 fs-4"></i> Suivi Étudiants
                         </a>
                     </li>
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="creer-admin.php">
+                            <i class="bi bi-person-lines-fill me-2 fs-4"></i> Créer un administrateur
+                        </a>
+                    </li>
                 </ul>
                 <div class="ms-2 pe-3">
                     <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
