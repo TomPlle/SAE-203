@@ -23,23 +23,25 @@
             </a>
         </div>
     </header>
+
     <main class="container d-flex flex-grow-1 align-items-center justify-content-center py-5">
         <div class="card-custom p-4 w-100" style="max-width: 550px;">
             <h3 class="text-center mb-4 fw-bold text-uppercase" style="letter-spacing: 1px;">Création de compte</h3>
             <form id="accountForm" action="./php/inscription_action.php" method="POST">
+                
                 <div class="mb-3">
-                    <label for="nom" class="form-label text-muted-custom small fw-bold">nom</label>
+                    <label for="nom" class="form-label text-muted-custom small fw-bold">Nom</label>
                     <input type="text" id="nom" name="nom" class="form-control bg-dark text-white border-secondary" required>
                 </div>
                 <div class="mb-3">
-                    <label for="prenom" class="form-label text-muted-custom small fw-bold">prenom</label>
+                    <label for="prenom" class="form-label text-muted-custom small fw-bold">Prénom</label>
                     <input type="text" id="prenom" name="prenom" class="form-control bg-dark text-white border-secondary" required>
                 </div>
-
                 <div class="mb-3">
-                    <label for="email" class="form-label text-muted-custom small fw-bold">email</label>
+                    <label for="email" class="form-label text-muted-custom small fw-bold">Email</label>
                     <input type="email" id="email" name="email" class="form-control bg-dark text-white border-secondary" required>
                 </div>
+
                 <div class="mb-4">
                     <label for="role" class="form-label text-warning small fw-bold"><i class="bi bi-person-badge me-1"></i> Rôle</label>
                     <select id="role" name="role" class="form-select bg-dark text-white border-secondary" required onchange="showRoleFields()">
@@ -53,24 +55,24 @@
                 <div id="fields-etudiant" class="role-fields mb-4 p-3 rounded" style="display: none; background-color: #0d1117; border: 1px dashed #30363d;">
                     <h6 class="text-primary mb-3"><i class="bi bi-mortarboard me-2"></i>Informations Étudiant</h6>
                     <div class="mb-2">
-                        <label for="matricule" class="form-label text-muted-custom small">matricule</label>
-                        <input type="text" id="matricule" name="matricule" class="form-control bg-dark text-white border-secondary">
+                        <label for="matricule" class="form-label text-muted-custom small">Matricule</label>
+                        <input type="text" id="matricule" name="matricule" class="form-control bg-dark text-white border-secondary" data-required="true">
                     </div>
                     <div class="mb-2">
-                        <label for="tel_etudiant" class="form-label text-muted-custom small">tel</label>
+                        <label id="label_tel" for="tel_etudiant" class="form-label text-muted-custom small">Téléphone</label>
                         <input type="text" id="tel_etudiant" name="tel" class="form-control bg-dark text-white border-secondary">
                     </div>
                     <div class="mb-2">
-                        <label for="date_naiss" class="form-label text-muted-custom small">date_naiss</label>
+                        <label id="label_date" for="date_naiss" class="form-label text-muted-custom small">Date de naissance</label>
                         <input type="date" id="date_naiss" name="date_naiss" class="form-control bg-dark text-white border-secondary">
                     </div>
                     <div class="mb-2">
-                        <label for="adresse" class="form-label text-muted-custom small">adresse</label>
+                        <label for="adresse" class="form-label text-muted-custom small">Adresse</label>
                         <input type="text" id="adresse" name="adresse" class="form-control bg-dark text-white border-secondary">
                     </div>
                     <div class="mb-2">
-                        <label for="promo" class="form-label text-muted-custom small">promo</label>
-                        <select id="promo" name="promo" class="form-select bg-dark text-white border-secondary">
+                        <label for="promo" class="form-label text-muted-custom small">Promotion</label>
+                        <select id="promo" name="promo" class="form-select bg-dark text-white border-secondary" data-required="true">
                             <option value="" disabled selected>Choisir une promotion...</option>
                             <option value="MMI 1">MMI 1</option>
                             <option value="MMI 2">MMI 2</option>
@@ -78,11 +80,11 @@
                         </select>
                     </div>
                     <div class="mb-2">
-                        <label for="gp_td" class="form-label text-muted-custom small">gp_td</label>
+                        <label class="form-label text-muted-custom small">Groupe TD</label>
                         <input type="text" id="gp_td" name="gp_td" class="form-control bg-dark text-white border-secondary">
                     </div>
                     <div class="mb-2">
-                        <label for="gp_tp" class="form-label text-muted-custom small">gp_tp</label>
+                        <label class="form-label text-muted-custom small">Groupe TP</label>
                         <input type="text" id="gp_tp" name="gp_tp" class="form-control bg-dark text-white border-secondary">
                     </div>
                 </div>
@@ -90,38 +92,48 @@
                 <div id="fields-enseignant" class="role-fields mb-4 p-3 rounded" style="display: none; background-color: #0d1117; border: 1px dashed #30363d;">
                     <h6 class="text-primary mb-3"><i class="bi bi-person-workspace me-2"></i>Informations Enseignant</h6>
                     <div class="mb-2">
-                        <label for="role_enseignant" class="form-label text-muted-custom small">role (Admin, Responsable, Jury, etc.)</label>
-                        <input type="text" id="role_enseignant" name="role_enseignant" class="form-control bg-dark text-white border-secondary">
+                        <label for="role_enseignant" class="form-label text-muted-custom small">Rôle enseignant</label>
+                        <select name="role_enseignant" id="role_enseignant" class="form-select bg-dark text-white border-secondary" data-required="true"> 
+                            <option value="" disabled selected>Choisir votre rôle...</option>
+                            <option value="Enseignant">Enseignant</option>
+                            <option value="Responsable-stage-MMI1">Responsable Stage MMI1</option>
+                            <option value="Responsable-stage-MMI2">Responsable Stage MMI2</option>
+                            <option value="Responsable-stage-MMI3">Responsable Stage MMI3</option>
+                        </select>
                     </div>
                 </div>
+
                 <div id="fields-maitre" class="role-fields mb-4 p-3 rounded" style="display: none; background-color: #0d1117; border: 1px dashed #30363d;">
                     <h6 class="text-primary mb-3"><i class="bi bi-building me-2"></i>Informations Maître de Stage</h6>
                     <div class="mb-2">
-                        <label for="tel_maitre" class="form-label text-muted-custom small">tel</label>
+                        <label for="tel_maitre" class="form-label text-muted-custom small">Téléphone professionnel</label>
                         <input type="text" id="tel_maitre" name="tel" class="form-control bg-dark text-white border-secondary">
                     </div>
                     <div class="mb-2">
-                        <label for="email_pro" class="form-label text-muted-custom small">email_pro</label>
-                        <input type="email" id="email_pro" name="email_pro" class="form-control bg-dark text-white border-secondary">
+                        <label for="email_pro" class="form-label text-muted-custom small">Email professionnel</label>
+                        <input type="email" id="email_pro" name="email_pro" class="form-control bg-dark text-white border-secondary" data-required="true">
                     </div>
                 </div>
+
                 <div class="mb-3">
-                    <label for="password" class="form-label text-muted-custom small fw-bold">mot de passe</label>
+                    <label id="label_pass" for="password" class="form-label text-muted-custom small fw-bold">Mot de passe</label>
                     <input type="password" id="password" name="password" class="form-control bg-dark text-white border-secondary" required>
                 </div>
                 <div class="mb-4">
-                    <label for="confirm_password" class="form-label text-muted-custom small fw-bold">confirmation de mot de passe</label>
+                    <label id="label_conf" for="confirm_password" class="form-label text-muted-custom small fw-bold">Confirmation du mot de passe</label>
                     <input type="password" id="confirm_password" name="confirm_password" class="form-control bg-dark text-white border-secondary" required>
                     <div id="error-msg" class="text-danger small mt-2" style="display: none;">
                         <i class="bi bi-exclamation-triangle-fill me-1"></i> Les mots de passe ne correspondent pas.
                     </div>
                 </div>
-                <center><a href="index.html">Déja un compte ?</a></center>
+
+                <center><a href="index.html">Déjà un compte ?</a></center>
                 <br>
                 <button type="submit" class="btn btn-purple w-100 fw-bold text-uppercase py-2" style="letter-spacing: 1px;">Envoyer</button>
             </form>
         </div>
     </main>
+
     <footer class="bg-black text-white py-2 border-top border-secondary">
         <div class="container-fluid px-4">
             <div class="row align-items-center">
@@ -133,25 +145,30 @@
             </div>
         </div>
     </footer>
+
     <script>
         function showRoleFields() {
             const selectedRole = document.getElementById('role').value;
             
-            // Masquer tous les blocs spécifiques et enlever 'required' des inputs et selects
+            // Masquer tous les blocs et retirer l'attribut required
             document.querySelectorAll('.role-fields').forEach(block => {
                 block.style.display = 'none';
                 block.querySelectorAll('input, select').forEach(element => element.removeAttribute('required'));
             });
 
-            // Afficher le bloc sélectionné et ajouter 'required' à ses éléments enfants
+            // Afficher le bloc actif et ajouter 'required' SEULEMENT aux éléments indispensables (data-required="true")
             if (selectedRole) {
                 const activeBlock = document.getElementById(`fields-${selectedRole}`);
-                activeBlock.style.display = 'block';
-                activeBlock.querySelectorAll('input, select').forEach(element => element.setAttribute('required', 'true'));
+                if (activeBlock) {
+                    activeBlock.style.display = 'block';
+                    activeBlock.querySelectorAll('[data-required="true"]').forEach(element => {
+                        element.setAttribute('required', 'true');
+                    });
+                }
             }
         }
 
-        // Vérification correspondance mots de passe
+        // Vérification de la correspondance des mots de passe
         document.getElementById('accountForm').addEventListener('submit', function(e) {
             const pass = document.getElementById('password').value;
             const confirmPass = document.getElementById('confirm_password').value;

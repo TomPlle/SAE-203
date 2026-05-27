@@ -18,14 +18,12 @@ try {
 $id_enseignant = $_SESSION['user']['id_enseignant']; 
 $nom_enseignant = $_SESSION['user']['nom'] ?? 'Nom';
 $prenom_enseignant = $_SESSION['user']['prenom'] ?? 'Prénom';
-
-// --- CORRECTION : Définition de la variable manquante pour le profil HTML ---
 $role_enseignant = $_SESSION['user']['role'] ?? 'Enseignant';
 
 $msg_success = "";
 $msg_error = "";
 
-// --- AJOUT : Traitement de la Planification d'une nouvelle soutenance ---
+// --- Traitement de la Planification d'une nouvelle soutenance ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_planifier'])) {
     $id_etudiant = $_POST['id_etudiant'];
     $date_sout = $_POST['date_soutenance'];
@@ -47,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_planifier'])) 
             $stmtInsert->execute([$date_sout, $heure_sout, $salle, $id_etudiant, $id_jury1, $id_jury2]);
             $msg_success = "La soutenance a été planifiée avec succès !";
         } catch (PDOException $e) {
-            $msg_error = "Erreur lors de la planification : " . $e->getMessage();
+            $msg_error = "Erreur lors de l'autorisation ou de la planification : " . $e->getMessage();
         }
     }
 }
@@ -58,30 +56,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_notes'])) {
     $note_rapport = !empty($_POST['note_rapport']) ? str_replace(',', '.', $_POST['note_rapport']) : null;
     $note_oral = !empty($_POST['note_oral']) ? str_replace(',', '.', $_POST['note_oral']) : null;
 
-    // Sécurité supplémentaire : s'assurer que l'enseignant fait bien partie de cette soutenance
-    $stmtNotes = $pdo->prepare("UPDATE soutenance SET note_rapport = ?, note_oral = ? WHERE id_soutenance = ? AND (id_enseignant_1 = ? OR id_enseignant_2 = ?)");
-    $stmtNotes->execute([$note_rapport, $note_oral, $id_soutenance, $id_enseignant, $id_enseignant]);
-    $msg_success = "Notes enregistrées avec succès ! Elles sont désormais consultables par l'étudiant.";
+    // SÉCURITÉ DOUBLE VERIFICATION : s'assurer côté serveur que l'enseignant fait bien partie du jury
+    $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM soutenance WHERE id_soutenance = ? AND (id_enseignant_1 = ? OR id_enseignant_2 = ?)");
+    $stmtCheck->execute([$id_soutenance, $id_enseignant, $id_enseignant]);
+    
+    if ($stmtCheck->fetchColumn() == 0) {
+        $msg_error = "Erreur de sécurité : Vous ne faites pas partie du jury de cette soutenance. Saisie refusée.";
+    } else {
+        $stmtNotes = $pdo->prepare("UPDATE soutenance SET note_rapport = ?, note_oral = ? WHERE id_soutenance = ?");
+        $stmtNotes->execute([$note_rapport, $note_oral, $id_soutenance]);
+        $msg_success = "Notes enregistrées avec succès ! Elles sont désormais consultables par l'étudiant.";
+    }
 }
 
-// Récupération des soutenances planifiées (Seulement celles où l'enseignant connecté est Jury 1 ou Jury 2)
+// Récupération de toutes les soutenances de l'établissement
 $stmtSout = $pdo->prepare("
     SELECT s.*, et.nom AS et_nom, et.prenom AS et_prenom, et.promo,
-           ens1.nom AS ens1_nom, ens2.nom AS ens2_nom
+           ens1.nom AS ens1_nom, ens1.id_enseignant AS ens1_id,
+           ens2.nom AS ens2_nom, ens2.id_enseignant AS ens2_id
     FROM soutenance s
     JOIN etudiant et ON s.id_etudiant = et.id_etudiant
     JOIN enseignant ens1 ON s.id_enseignant_1 = ens1.id_enseignant
     JOIN enseignant ens2 ON s.id_enseignant_2 = ens2.id_enseignant
-    WHERE s.id_enseignant_1 = ? OR s.id_enseignant_2 = ?
     ORDER BY s.date ASC, s.heure ASC
 ");
-$stmtSout->execute([$id_enseignant, $id_enseignant]);
+$stmtSout->execute();
 $soutenances = $stmtSout->fetchAll(PDO::FETCH_ASSOC);
 
-// --- AJOUT : Données pour alimenter le formulaire de planification ---
-// 1. Liste des étudiants sans soutenance
+// Liste des étudiants sans soutenance
 $liste_etudiants = $pdo->query("SELECT id_etudiant, nom, prenom, promo FROM etudiant WHERE id_etudiant NOT IN (SELECT id_etudiant FROM soutenance) ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-// 2. Liste de tous les enseignants disponibles pour le jury
+// Liste de tous les enseignants disponibles pour le jury
 $liste_enseignants = $pdo->query("SELECT id_enseignant, nom, prenom FROM enseignant ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
@@ -124,6 +128,11 @@ $liste_enseignants = $pdo->query("SELECT id_enseignant, nom, prenom FROM enseign
                             <i class="bi bi-calendar-event me-2 fs-4"></i> Soutenances & Notes
                         </a>
                     </li>
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="offres-enseignant.php">
+                            <i class="bi bi-grid-3x3-gap me-2 fs-4"></i> Catalogue Offres
+                        </a>
+                    </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
                     <div class="d-flex align-items-center ps-4">
@@ -151,7 +160,7 @@ $liste_enseignants = $pdo->query("SELECT id_enseignant, nom, prenom FROM enseign
                 <button type="button" class="btn btn-purple btn-sm me-3" data-bs-toggle="modal" data-bs-target="#modalPlanifier">
                     <i class="bi bi-calendar-plus me-2"></i> Planifier une soutenance
                 </button>
-                <span class="badge border-warning text-warning p-2"><i class="bi bi-exclamation-triangle me-2"></i> Rappel : Délai de saisie de 7 jours maximum</span>
+                <span class="badge border-warning text-warning p-2"><i class="bi bi-exclamation-triangle me-2"></i> Rappel : Saisie sous 7 jours maximum</span>
             </div>
         </div>
 
@@ -160,7 +169,7 @@ $liste_enseignants = $pdo->query("SELECT id_enseignant, nom, prenom FROM enseign
         <?php endif; ?>
 
         <?php if (!empty($msg_error)): ?>
-            <div class="alert alert-danger bg-danger text-white border-0 mb-4"><?php echo $msg_error; ?></div>
+            <div class="alert alert-danger bg-danger text-white border-0 mb-4"><i class="bi bi-exclamation-octagon me-2"></i> <?php echo $msg_error; ?></div>
         <?php endif; ?>
 
         <div class="card-custom p-0 overflow-hidden border-secondary">
@@ -180,6 +189,9 @@ $liste_enseignants = $pdo->query("SELECT id_enseignant, nom, prenom FROM enseign
                             <tr><td colspan="5" class="text-center text-muted py-4">Aucune soutenance n'est programmée à votre planning.</td></tr>
                         <?php else: ?>
                             <?php foreach ($soutenances as $sout): ?>
+                                <?php 
+                                    $est_jury_de_ce_candidat = ($id_enseignant == $sout['ens1_id'] || $id_enseignant == $sout['ens2_id']);
+                                ?>
                                 <tr class="border-secondary">
                                     <td>
                                         <div class="fw-bold text-white"><?php echo date('d/m/Y', strtotime($sout['date'])); ?></div>
@@ -191,20 +203,33 @@ $liste_enseignants = $pdo->query("SELECT id_enseignant, nom, prenom FROM enseign
                                         <div class="small text-info"><?php echo htmlspecialchars($sout['promo']); ?></div>
                                     </td>
                                     <td class="small">
-                                        <div class="text-muted-custom">Jury 1 : <span class="text-white"><?php echo htmlspecialchars($sout['ens1_nom']); ?></span></div>
-                                        <div class="text-muted-custom">Jury 2 : <span class="text-white"><?php echo htmlspecialchars($sout['ens2_nom']); ?></span></div>
+                                        <div class="text-muted-custom">Jury 1 : <span class="<?php echo ($id_enseignant == $sout['ens1_id']) ? 'text-success fw-bold' : 'text-white'; ?>"><?php echo htmlspecialchars($sout['ens1_nom']); ?></span></div>
+                                        <div class="text-muted-custom">Jury 2 : <span class="<?php echo ($id_enseignant == $sout['ens2_id']) ? 'text-success fw-bold' : 'text-white'; ?>"><?php echo htmlspecialchars($sout['ens2_nom']); ?></span></div>
                                     </td>
                                     <td>
                                         <form method="POST" action="" class="row g-2 align-items-center">
                                             <input type="hidden" name="id_soutenance" value="<?php echo $sout['id_soutenance']; ?>">
+                                            
                                             <div class="col-4">
-                                                <input type="number" step="0.01" min="0" max="20" name="note_rapport" class="form-control form-control-sm bg-dark text-white border-secondary text-center" placeholder="Rapport" value="<?php echo $sout['note_rapport']; ?>" required>
+                                                <input type="number" step="0.01" min="0" max="20" name="note_rapport" 
+                                                       class="form-control form-control-sm bg-dark text-white border-secondary text-center <?php echo !$est_jury_de_ce_candidat ? 'opacity-50' : ''; ?>" 
+                                                       placeholder="Rapport" value="<?php echo $sout['note_rapport']; ?>" 
+                                                       required <?php echo !$est_jury_de_ce_candidat ? 'readonly' : ''; ?>>
                                             </div>
+                                            
                                             <div class="col-4">
-                                                <input type="number" step="0.01" min="0" max="20" name="note_oral" class="form-control form-control-sm bg-dark text-white border-secondary text-center" placeholder="Oral" value="<?php echo $sout['note_oral']; ?>" required>
+                                                <input type="number" step="0.01" min="0" max="20" name="note_oral" 
+                                                       class="form-control form-control-sm bg-dark text-white border-secondary text-center <?php echo !$est_jury_de_ce_candidat ? 'opacity-50' : ''; ?>" 
+                                                       placeholder="Oral" value="<?php echo $sout['note_oral']; ?>" 
+                                                       required <?php echo !$est_jury_de_ce_candidat ? 'readonly' : ''; ?>>
                                             </div>
+                                            
                                             <div class="col-4 d-grid">
-                                                <button type="submit" name="action_notes" class="btn btn-success btn-sm" title="Enregistrer les notes"><i class="bi bi-save"></i></button>
+                                                <?php if ($est_jury_de_ce_candidat): ?>
+                                                    <button type="submit" name="action_notes" class="btn btn-success btn-sm" title="Enregistrer les notes"><i class="bi bi-save"></i></button>
+                                                <?php else: ?>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm opacity-50" title="Lecture seule (Vous ne faites pas partie du jury)" disabled><i class="bi bi-lock-fill"></i></button>
+                                                <?php endif; ?>
                                             </div>
                                         </form>
                                     </td>
@@ -286,7 +311,6 @@ $liste_enseignants = $pdo->query("SELECT id_enseignant, nom, prenom FROM enseign
 </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Empêche la sélection de plus de deux membres de jury dans les cases à cocher
 function verifierCompteJury(cb) {
     var cochees = document.querySelectorAll('.check-jury:checked');
     if (cochees.length > 2) {

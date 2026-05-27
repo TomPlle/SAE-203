@@ -42,5 +42,5 @@ if (isset($_GET['id']) && isset($_GET['type']) && isset($_GET['action'])) {
     }
 }
 
-header("Location: ../php/dashboard-admin.php");
+header("Location: ../admin/dashboard-admin.php");
 exit();

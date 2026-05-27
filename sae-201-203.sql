@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Hôte : 127.0.0.1
--- Généré le : mer. 27 mai 2026 à 16:24
--- Version du serveur : 10.4.32-MariaDB
--- Version de PHP : 8.2.12
+-- Hôte : localhost
+-- Généré le : mer. 27 mai 2026 à 16:22
+-- Version du serveur : 10.4.28-MariaDB
+-- Version de PHP : 8.2.4
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -65,7 +65,8 @@ CREATE TABLE `enseignant` (
 
 INSERT INTO `enseignant` (`id_enseignant`, `nom`, `prenom`, `email`, `password`, `role`, `valide`) VALUES
 (1, 'enseignant', 'enseignant', 'enseignant@gmail.com', '$2y$10$RJlK4Lkr99YoIyL7GFFgoe6T./fCUOZywKseKCdXKki.l.pi4.vrq', 'Jury', 1),
-(4, 'enseignant2', 'enseignant2', 'enseignant2@gmail.com', '$2y$10$vdMiX1xom0.3khPT8Qt4DuS2D8WQdLL0vrjjL.LREkM3GMM8VMjXi', 'Responsable-Stage-MMI1', 1);
+(4, 'enseignant2', 'enseignant2', 'enseignant2@gmail.com', '$2y$10$vdMiX1xom0.3khPT8Qt4DuS2D8WQdLL0vrjjL.LREkM3GMM8VMjXi', 'Jury', 1),
+(5, 'enseignant3', 'enseignant3', 'enseignant3@gmail.com', '$2y$10$u5T/cd54Owl5i80LXi5TAO1rH2v9Kmp6h.pOWbYmsVXk.kPkjuJDS', 'Responsable-Stage-MMI1', 1);
 
 -- --------------------------------------------------------
 
@@ -133,7 +134,8 @@ CREATE TABLE `historique` (
 
 INSERT INTO `historique` (`id_recherche`, `entreprise_cible`, `date_contact`, `type_action`, `reponse`, `id_etudiant`) VALUES
 (5, 'Entreprise Partenaire (Offre N°1)', '2026-05-27', 'Candidature Intranet', 'En attente', 2),
-(6, 'Entreprise Partenaire (Offre N°1)', '2026-05-27', 'Candidature Intranet', 'En attente', 2);
+(6, 'Entreprise Partenaire (Offre N°1)', '2026-05-27', 'Candidature Intranet', 'En attente', 2),
+(7, 'Entreprise Partenaire (Offre N°2)', '2026-05-27', 'Candidature Intranet', 'En attente', 1);
 
 -- --------------------------------------------------------
 
@@ -157,7 +159,8 @@ CREATE TABLE `offre` (
 --
 
 INSERT INTO `offre` (`id_offre`, `intitule`, `description`, `competences`, `duree`, `lieu`, `remuneration`, `promotion_visee`) VALUES
-(1, 'Stage développement', 'Stage dans lequel l\'étudiant devra réaliser un site web avec base de données.', 'Langages JavaScript, HTML5, CSS3, PHP et SQL.', '60', 'IUT Gustave Eiffel Meaux', 0.00, 'MMI2');
+(1, 'Stage développement', 'Stage dans lequel l\'étudiant devra réaliser un site web avec base de données.', 'Langages JavaScript, HTML5, CSS3, PHP et SQL.', '60', 'IUT Gustave Eiffel Meaux', 0.00, 'MMI2'),
+(2, 'Stage - Dev Web', '- Savoir gérer un site web et une base de donnée', 'HTML, CSS, PHP, SQL', '4', 'Meaux', 0.00, 'MMI1');
 
 -- --------------------------------------------------------
 
@@ -307,13 +310,13 @@ ALTER TABLE `stage`
 -- AUTO_INCREMENT pour la table `admin`
 --
 ALTER TABLE `admin`
-  MODIFY `id_admin` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_admin` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pour la table `enseignant`
 --
 ALTER TABLE `enseignant`
-  MODIFY `id_enseignant` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_enseignant` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT pour la table `entreprise`
@@ -331,13 +334,13 @@ ALTER TABLE `etudiant`
 -- AUTO_INCREMENT pour la table `historique`
 --
 ALTER TABLE `historique`
-  MODIFY `id_recherche` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id_recherche` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT pour la table `offre`
 --
 ALTER TABLE `offre`
-  MODIFY `id_offre` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_offre` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pour la table `responsable_de_stage`

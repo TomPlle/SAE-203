@@ -93,6 +93,11 @@ $role_enseignant   = $enseignant['role'] ?? 'Enseignant';
                             <i class="bi bi-calendar-event me-2 fs-4"></i> Soutenances & Notes
                         </a>
                     </li>
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="offres-enseignant.php">
+                            <i class="bi bi-grid-3x3-gap me-2 fs-4"></i> Catalogue Offres
+                        </a>
+                    </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
                     <div class="d-flex align-items-center ps-4">

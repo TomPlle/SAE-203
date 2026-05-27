@@ -79,6 +79,12 @@ $visites_a_planifier = $stmtVisitesManquantes->fetchColumn();
                             <i class="bi bi-calendar-event me-2 fs-4"></i> Soutenances & Notes
                         </a>
                     </li>
+                    <!-- AJOUT NAVBAR : Onglet Catalogue Offres intégré -->
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="offres-enseignant.php">
+                            <i class="bi bi-grid-3x3-gap me-2 fs-4"></i> Catalogue Offres
+                        </a>
+                    </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
                     <div class="d-flex align-items-center ps-4">
@@ -136,14 +142,14 @@ $visites_a_planifier = $stmtVisitesManquantes->fetchColumn();
                 <div class="card-custom p-3 mb-3 border-danger">
                     <div class="text-danger small fw-bold mb-1">Règle des 7 jours</div>
                     <div class="fw-bold mb-2">Saisie des Évaluations</div>
-                    <p class="small text-muted mb-2">Conformément aux consignes du BUT MMI, les notes de rapport et d'oral doivent être publiées au maximum 1 semaine après la soutenance.</p>
+                    <p class="small text-white-50 mb-2">Conformément aux consignes du BUT MMI, les notes de rapport et d'oral doivent être publiées au maximum 1 semaine après la soutenance.</p>
                     <span class="status-badge border-danger text-danger">Strict</span>
                 </div>
 
                 <div class="card-custom p-3">
                     <div class="text-primary small fw-bold mb-1">Visite de stage</div>
                     <div class="fw-bold mb-2">Suivi sur le terrain</div>
-                    <p class="small text-muted mb-2">N'oubliez pas de renseigner la date de votre visite de stage pour chaque étudiant encadré dès confirmation avec le maître de stage.</p>
+                    <p class="small text-white-50 mb-2">N'oubliez pas de renseigner la date de votre visite de stage pour chaque étudiant encadré dès confirmation avec le maître de stage.</p>
                     <span class="status-badge">Information</span>
                 </div>
             </div>
