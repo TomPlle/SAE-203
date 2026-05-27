@@ -111,7 +111,7 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
                     <div class="d-flex align-items-center ps-4">
-                        <a class="text-decoration-none" href="compte-etudiant.html">
+                        <a class="text-decoration-none" href="compte-etudiant.php">
                             <div class="text-end me-3">
                                 <div class="text-muted-custom" style="font-size: 0.7rem;"><center>Profil</center></div>
                                 <div class="fw-bold text-white text-uppercase" style="font-size: 0.95rem;">
@@ -121,7 +121,7 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
                         </a>
                     </div>
                     <div class="ms-2 pe-3">
-                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm" title="Déconnexion"><i class="bi bi-box-arrow-right"></i>Déconnexion</a>
+                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm" title="Déconnexion"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
                     </div>
                 </div>
             </div>

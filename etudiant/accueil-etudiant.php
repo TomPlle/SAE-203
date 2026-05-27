@@ -21,10 +21,14 @@ $id_etudiant = $_SESSION['user']['id_etudiant'];
 $nom_etudiant = isset($_SESSION['user']['nom']) ? $_SESSION['user']['nom'] : 'Nom';
 $prenom_etudiant = isset($_SESSION['user']['prenom']) ? $_SESSION['user']['prenom'] : 'Prénom';
 
-// 2. Statut global (Stepper) par défaut
-$statut_global = "recherche";
+// Récupération de la promo brute pour le filtrage des offres (ex: "MMI 1", "MMI 2")
+$stmtPromoEt = $pdo->prepare("SELECT promo FROM etudiant WHERE id_etudiant = ?");
+$stmtPromoEt->execute([$id_etudiant]);
+$promo_brute = $stmtPromoEt->fetchColumn() ?? 'MMI 1';
+$promo_filtre = str_replace(' ', '', $promo_brute); // Transforme "MMI 2" en "MMI2" pour correspondre à l'ENUM
 
-// MODIFICATION DU CALCUL : Basé chronologiquement sur la toute dernière ligne insérée dans l'historique
+// 2. Statut global (Stepper) basé sur la dernière action dans l'historique
+$statut_global = "recherche";
 $stmtDernier = $pdo->prepare("SELECT reponse FROM historique WHERE id_etudiant = ? ORDER BY date_contact DESC, id_recherche DESC LIMIT 1");
 $stmtDernier->execute([$id_etudiant]);
 $derniere_action = $stmtDernier->fetch(PDO::FETCH_ASSOC);
@@ -39,13 +43,11 @@ if ($derniere_action) {
     }
 }
 
-// 3. STATISTIQUES DES DÉMARCHES (Bloc de droite)
-// Compte le nombre total de démarches initiées
+// 3. STATISTIQUES DES DÉMARCHES
 $stmtTotal = $pdo->prepare("SELECT COUNT(*) FROM historique WHERE id_etudiant = ?");
 $stmtTotal->execute([$id_etudiant]);
 $total_postules = $stmtTotal->fetchColumn();
 
-// Compte le nombre de démarches dont la réponse est 'En attente'
 $stmtAttente = $pdo->prepare("SELECT COUNT(*) FROM historique WHERE id_etudiant = ? AND reponse = 'En attente'");
 $stmtAttente->execute([$id_etudiant]);
 $total_en_attente = $stmtAttente->fetchColumn();
@@ -63,9 +65,13 @@ $stmtSoutenance = $pdo->prepare("
 $stmtSoutenance->execute([$id_etudiant]);
 $soutenance = $stmtSoutenance->fetch(PDO::FETCH_ASSOC);
 
-// Drapeaux d'affichage conditionnel
 $a_une_soutenance = ($soutenance ? true : false);
 $notes_disponibles = ($a_une_soutenance && $soutenance['note_rapport'] !== null && $soutenance['note_oral'] !== null);
+
+// 5. RÉCUPÉRATION DES 3 DERNIÈRES OFFRES DISPONIBLES
+$stmtDernieresOffres = $pdo->prepare("SELECT * FROM offre WHERE promotion_visee = ? ORDER BY id_offre DESC LIMIT 3");
+$stmtDernieresOffres->execute([$promo_filtre]);
+$dernieres_offres = $stmtDernieresOffres->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -121,7 +127,7 @@ $notes_disponibles = ($a_une_soutenance && $soutenance['note_rapport'] !== null 
                         </a>
                     </div>
                     <div class="ms-2 pe-3">
-                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm" title="Déconnexion"><i class="bi bi-box-arrow-right"></i>Déconnexion</a>
+                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm" title="Déconnexion"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
                     </div>
                 </div>
             </div>
@@ -130,7 +136,6 @@ $notes_disponibles = ($a_une_soutenance && $soutenance['note_rapport'] !== null 
 
     <main class="container-fluid px-4 py-4">
         <div class="row g-3 mb-4 justify-content-center text-center">
-            
             <div class="col-md-2">
                 <div class="card-custom p-3 <?php echo ($statut_global === 'recherche') ? 'border-info' : 'opacity-50'; ?>" 
                      style="<?php echo ($statut_global === 'recherche') ? 'box-shadow: 0 0 15px rgba(13, 202, 240, 0.2);' : ''; ?>">
@@ -138,9 +143,7 @@ $notes_disponibles = ($a_une_soutenance && $soutenance['note_rapport'] !== null 
                     <div class="small fw-bold">En recherche</div>
                 </div>
             </div>
-            
             <div class="col-auto d-flex align-items-center"><i class="bi bi-chevron-right text-secondary"></i></div>
-            
             <div class="col-md-2">
                 <div class="card-custom p-3 <?php echo ($statut_global === 'entretien') ? 'border-primary' : 'opacity-50'; ?>" 
                      style="<?php echo ($statut_global === 'entretien') ? 'box-shadow: 0 0 15px rgba(13, 110, 253, 0.2);' : ''; ?>">
@@ -148,9 +151,7 @@ $notes_disponibles = ($a_une_soutenance && $soutenance['note_rapport'] !== null 
                     <div class="small fw-bold">En entretien</div>
                 </div>
             </div>
-            
             <div class="col-auto d-flex align-items-center"><i class="bi bi-chevron-right text-secondary"></i></div>
-            
             <div class="col-md-2">
                 <div class="card-custom p-3 <?php echo ($statut_global === 'convention') ? 'border-success' : 'opacity-50'; ?>" 
                      style="<?php echo ($statut_global === 'convention') ? 'box-shadow: 0 0 15px rgba(25, 135, 84, 0.2);' : ''; ?>">
@@ -158,26 +159,34 @@ $notes_disponibles = ($a_une_soutenance && $soutenance['note_rapport'] !== null 
                     <div class="small fw-bold">Convention signée</div>
                 </div>
             </div>
-            
         </div>
 
         <div class="row g-4">
             <div class="col-lg-3">
-                <h5 class="mb-3">Dernières actus</h5>
+                <h5 class="mb-3">Nouvelles offres — <?php echo htmlspecialchars($promo_brute); ?></h5>
                 
-                <div class="card-custom p-3 mb-3">
-                    <div class="text-primary small fw-bold mb-1">Publié le 12/05/2026</div>
-                    <div class="fw-bold mb-2">Atelier CV & Lettre de Motivation</div>
-                    <p class="small text-muted mb-2">Préparez vos candidatures avec les conseillers du SUIO.</p>
-                    <span class="status-badge">Accompagnement</span>
-                </div>
-
-                <div class="card-custom p-3 border-warning">
-                    <div class="text-warning small fw-bold mb-1">Prochain évènement</div>
-                    <div class="fw-bold mb-2">Forum Entreprises Eiffel</div>
-                    <p class="small text-muted mb-2">Rencontrez + de 50 entreprises pour votre futur stage.</p>
-                    <span class="status-badge border-warning text-warning">Important</span>
-                </div>
+                <?php if (count($dernieres_offres) === 0): ?>
+                    <div class="card-custom p-3 text-center text-white-50 small">
+                        Aucune offre récente disponible pour votre promotion.
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($dernieres_offres as $off): ?>
+                        <div class="card-custom p-3 mb-3" 
+                             style="cursor: pointer; border: 2px solid #8a2be2; box-shadow: 0 0 12px rgba(138, 43, 226, 0.45);" 
+                             onclick="window.location.href='offres-etudiant.php';">
+                            <div class="text-purple small fw-bold mb-1">
+                                <i class="bi bi-geo-alt me-1"></i> <?php echo htmlspecialchars($off['lieu'] ?? 'Lieu non spécifié'); ?>
+                            </div>
+                            <div class="fw-bold mb-1 text-truncate" title="<?php echo htmlspecialchars($off['intitule']); ?>">
+                                <?php echo htmlspecialchars($off['intitule']); ?>
+                            </div>
+                            <p class="small text-white-50 mb-2 text-truncate-2">
+                                <?php echo htmlspecialchars($off['description']); ?>
+                            </p>
+                            <span class="status-badge bg-intranet-dark text-white-50" style="border-color: #8a2be2;">Nouveau</span>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
 
             <div class="col-lg-6">
@@ -186,7 +195,7 @@ $notes_disponibles = ($a_une_soutenance && $soutenance['note_rapport'] !== null 
                     <div class="position-absolute bottom-0 start-0 p-4 w-100 bg-gradient-dark">
                         <h2 class="fw-bold">Bienvenue, <?php echo htmlspecialchars($prenom_etudiant); ?> !</h2>
                         <p>Suivez l'avancement de vos démarches et consultez les offres exclusives.</p>
-                        <button onclick="window.location.href='demarches-etudiant.html';" class="btn btn-purple mt-2">Voir mes démarches <i class="bi bi-arrow-right ms-2"></i></button>
+                        <button onclick="window.location.href='demarches-etudiant.php';" class="btn btn-purple mt-2">Voir mes démarches <i class="bi bi-arrow-right ms-2"></i></button>
                     </div>
                 </div>
 
@@ -260,10 +269,10 @@ $notes_disponibles = ($a_une_soutenance && $soutenance['note_rapport'] !== null 
                         </div>
                     </div>
                 <?php endif; ?>
-
             </div>
         </div>
     </main>
+    
     <footer class="bg-black text-white py-2 border-top border-secondary">
         <div class="container-fluid px-4">
             <div class="row align-items-center">

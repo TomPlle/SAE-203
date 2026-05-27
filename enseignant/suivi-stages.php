@@ -19,6 +19,9 @@ $id_enseignant = $_SESSION['user']['id_enseignant'];
 $nom_enseignant = $_SESSION['user']['nom'] ?? 'Nom';
 $prenom_enseignant = $_SESSION['user']['prenom'] ?? 'Prénom';
 
+// --- CORRECTION : Définition de la variable manquante demandée dans le HTML ---
+$role_enseignant = $_SESSION['user']['role'] ?? 'Enseignant';
+
 // Traitement de la mise à jour de la visite ou de la validation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_update'])) {
     $id_stage = $_POST['id_stage'];
@@ -54,25 +57,49 @@ $stages = $stmtMyStages->fetchAll(PDO::FETCH_ASSOC);
 <body class="d-flex flex-column min-vh-100 bg-dark text-white">
     <header class="navbar navbar-expand-lg bg-intranet-dark text-white p-0 py-2 border-bottom border-secondary">
         <div class="container-fluid px-4">
-            <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4 border-end border-secondary" href="accueil-enseignant.php">
+            <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4 border-end border-secondary" href="accueil-enseignant.php" style="height: 100%;">
                 <img src="../images/logo-noir-blanc.png" alt="Logo" class="me-3" style="height: 50px; width: auto;"> 
                 <div class="lh-sm">
-                    <div class="fw-bold text-uppercase" style="font-size: 1.1rem; letter-spacing: 1px;">GESTIONNAIRE DE STAGE</div>
-                    <div class="text-muted-custom" style="font-size: 0.8rem;">UNIVERSITÉ GUSTAVE EIFFEL</div>
+                    <div class="fw-bold text-uppercase" style="font-size: 1.1rem; letter-spacing: 1px;">
+                        GESTIONNAIRE DE STAGE
+                    </div>
+                    <div class="text-muted-custom" style="font-size: 0.8rem; letter-spacing: 0.5px;">
+                        UNIVERSITÉ GUSTAVE EIFFEL
+                    </div>
                 </div>
             </a>
             <div class="collapse navbar-collapse justify-content-between">
                 <ul class="navbar-nav mx-auto align-items-stretch border-start border-end border-secondary">
-                    <li class="nav-item"><a class="nav-link nav-link-custom d-flex align-items-center" href="accueil-enseignant.php"><i class="bi bi-house-door me-2 fs-4"></i> Accueil</a></li>
-                    <li class="nav-item border-start border-secondary"><a class="nav-link nav-link-custom active d-flex align-items-center" href="suivi-stages.php"><i class="bi bi-person-video3 me-2 fs-4"></i> Suivi des Stages</a></li>
-                    <li class="nav-item border-start border-secondary"><a class="nav-link nav-link-custom d-flex align-items-center" href="soutenances-enseignant.php"><i class="bi bi-calendar-event me-2 fs-4"></i> Soutenances & Notes</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="accueil-enseignant.php">
+                            <i class="bi bi-house-door me-2 fs-4"></i> Accueil
+                        </a>
+                    </li>
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom active d-flex align-items-center" href="suivi-stages.php">
+                            <i class="bi bi-person-video3 me-2 fs-4"></i> Suivi des Stages
+                        </a>
+                    </li>
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="soutenances-enseignant.php">
+                            <i class="bi bi-calendar-event me-2 fs-4"></i> Soutenances & Notes
+                        </a>
+                    </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
-                    <div class="ps-4 text-end me-3">
-                        <div class="text-muted-custom" style="font-size: 0.7rem;">Espace Enseignant</div>
-                        <div class="fw-bold text-white text-uppercase" style="font-size: 0.95rem;"><?php echo htmlspecialchars($prenom_enseignant . ' ' . $nom_enseignant); ?></div>
+                    <div class="d-flex align-items-center ps-4">
+                        <a class="text-decoration-none" href="compte-enseignant.php">
+                            <div class="text-end me-3">
+                                <div class="text-muted-custom" style="font-size: 0.7rem;"><center>Espace <?php echo htmlspecialchars($role_enseignant); ?></center></div>
+                                <div class="fw-bold text-white text-uppercase" style="font-size: 0.95rem;">
+                                    <?php echo htmlspecialchars($prenom_enseignant . ' ' . $nom_enseignant); ?>
+                                </div>
+                            </div>
+                        </a>
                     </div>
-                    <div class="pe-3"><a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right"></i> Déconnexion</a></div>
+                    <div class="ms-2 pe-3">
+                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm" title="Déconnexion"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                    </div>
                 </div>
             </div>
         </div>
