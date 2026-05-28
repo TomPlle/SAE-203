@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Sécurité : Si l'utilisateur n'est pas connecté ou n'est pas enseignant, retour à l'index
+// 1. Sécurité : Vérifier si l'utilisateur est connecté et est enseignant
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'enseignant') {
     header("Location: ../index.html");
     exit();
@@ -16,29 +16,64 @@ try {
     die("Erreur de connexion : " . $e->getMessage());
 }
 
-$id_enseignant = $_SESSION['user']['id_enseignant'];
+// Initialisation des messages d'état
 $msg_success = "";
 $msg_error = "";
 
-// --- TRAITEMENT DU FORMULAIRE : Mise à jour du rôle uniquement ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_update_enseignant'])) {
-    $role = $_POST['role'];
+// 2. Récupération des données de session
+$id_enseignant     = $_SESSION['user']['id_enseignant'] ?? null; 
+$nom_enseignant    = $_SESSION['user']['nom'] ?? 'Nom';
+$prenom_enseignant = $_SESSION['user']['prenom'] ?? 'Prénom';
+$role_enseignant   = $_SESSION['user']['role'] ?? 'Enseignant';
 
-    try {
-        // Sécurité : Seul le champ 'role' est mis à jour. Le nom, prénom et mail restent intacts.
-        $stmtUpdate = $pdo->prepare("
-            UPDATE enseignant 
-            SET role = ?
-            WHERE id_enseignant = ?
-        ");
-        $stmtUpdate->execute([$role, $id_enseignant]);
-        
-        // Mise à jour de la variable de session du rôle interne si nécessaire
-        $_SESSION['user']['role'] = $role;
-        
-        $msg_success = "Vos informations professionnelles ont été mises à jour avec succès !";
-    } catch (PDOException $e) {
-        $msg_error = "Erreur lors de la mise à jour : " . $e->getMessage();
+// 3. Vérification du rôle de responsable pour la Navbar
+$est_un_responsable = (strpos($role_enseignant, 'Responsable-stage-MMI') !== false || strpos($role_enseignant, 'Responsable-Stage-MMI') !== false);
+
+// --- TRAITEMENT DU FORMULAIRE ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_update_enseignant'])) {
+    $email            = isset($_POST['email']) ? trim($_POST['email']) : '';
+    $old_password     = isset($_POST['old_password']) ? $_POST['old_password'] : '';
+    $new_password     = isset($_POST['new_password']) ? $_POST['new_password'] : '';
+    $confirm_password = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
+
+    // Récupération du mot de passe actuel en BDD pour validation de sécurité
+    $stmtCheck = $pdo->prepare("SELECT password FROM enseignant WHERE id_enseignant = ?");
+    $stmtCheck->execute([$id_enseignant]);
+    $enseignant_db = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+    if (!$enseignant_db || !password_verify($old_password, $enseignant_db['password'])) {
+        $msg_error = "Erreur : Le mot de passe actuel est incorrect. Les modifications ont été annulées.";
+    } else {
+        try {
+            // Vérification si l'enseignant veut aussi changer son mot de passe
+            if (!empty($new_password)) {
+                if ($new_password !== $confirm_password) {
+                    $msg_error = "Erreur : Le nouveau mot de passe et sa confirmation ne correspondent pas.";
+                } else {
+                    $new_password_hash = password_hash($new_password, PASSWORD_DEFAULT);
+                    
+                    $stmtUpdate = $pdo->prepare("
+                        UPDATE enseignant 
+                        SET email = ?, password = ?
+                        WHERE id_enseignant = ?
+                    ");
+                    $stmtUpdate->execute([$email, $new_password_hash, $id_enseignant]);
+                    
+                    $msg_success = "Votre adresse e-mail et votre mot de passe ont été mis à jour !";
+                }
+            } else {
+                $stmtUpdate = $pdo->prepare("
+                    UPDATE enseignant 
+                    SET email = ?
+                    WHERE id_enseignant = ?
+                ");
+                $stmtUpdate->execute([$email, $id_enseignant]);
+                
+                $msg_success = "Votre adresse e-mail a été mise à jour avec succès !";
+            }
+        } catch (PDOException $e) {
+            $msg_error = "Erreur lors de la mise à jour : " . $e->getMessage();
+        }
     }
 }
 
@@ -61,8 +96,22 @@ $role_enseignant   = $enseignant['role'] ?? 'Enseignant';
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="icon" type="image/png" href="../images/logo-noir-blanc.png">
+    <script>
+        const themeEnregistre = localStorage.getItem('intranet-theme') || 'light';
+        if (themeEnregistre === 'dark') {
+            document.documentElement.classList.add('dark-theme-init');
+        }
+    </script>
 </head>
-<body class="d-flex flex-column min-vh-100 bg-dark text-white">
+<body id="page-body" class="d-flex flex-column min-vh-100 light-mode">
+    
+    <script>
+        if (localStorage.getItem('intranet-theme') === 'dark') {
+            const bodyEl = document.getElementById('page-body');
+            bodyEl.classList.remove('light-mode');
+            bodyEl.classList.add('dark-mode');
+        }
+    </script>
     <header class="navbar navbar-expand-lg bg-intranet-dark text-white p-0 py-2 border-bottom border-secondary">
         <div class="container-fluid px-4">
             <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4 border-end border-secondary" href="accueil-enseignant.php" style="height: 100%;">
@@ -77,29 +126,43 @@ $role_enseignant   = $enseignant['role'] ?? 'Enseignant';
                 </div>
             </a>
             <div class="collapse navbar-collapse justify-content-between">
-                <ul class="navbar-nav mx-auto align-items-stretch border-start border-end border-secondary">
+                <ul class="navbar-nav mx-auto align-items-stretch border-start border-end border-secondary small">
                     <li class="nav-item">
-                        <a class="nav-link nav-link-custom d-flex align-items-center" href="accueil-enseignant.php">
-                            <i class="bi bi-house-door me-2 fs-4"></i> Accueil
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="accueil-enseignant.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-house-door me-2 fs-6"></i> Accueil
                         </a>
                     </li>
                     <li class="nav-item border-start border-secondary">
-                        <a class="nav-link nav-link-custom d-flex align-items-center" href="suivi-stages.php">
-                            <i class="bi bi-person-video3 me-2 fs-4"></i> Suivi des Stages
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="suivi-stages.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-person-video3 me-2 fs-6"></i> Suivi des Stages
+                        </a>
+                    </li>
+                    
+                    <?php if ($est_un_responsable): ?>
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="validation-stages.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-clipboard-check me-2 fs-6"></i> Demandes de Validation
+                        </a>
+                    </li>
+                    <?php endif; ?>
+                    
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="soutenances-enseignant.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-calendar-event me-2 fs-6"></i> Soutenances & Notes
                         </a>
                     </li>
                     <li class="nav-item border-start border-secondary">
-                        <a class="nav-link nav-link-custom d-flex align-items-center" href="soutenances-enseignant.php">
-                            <i class="bi bi-calendar-event me-2 fs-4"></i> Soutenances & Notes
-                        </a>
-                    </li>
-                    <li class="nav-item border-start border-secondary">
-                        <a class="nav-link nav-link-custom d-flex align-items-center" href="offres-enseignant.php">
-                            <i class="bi bi-grid-3x3-gap me-2 fs-4"></i> Catalogue Offres
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="offres-enseignant.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-grid-3x3-gap me-2 fs-6"></i> Catalogue Offres
                         </a>
                     </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
+                    <div class="pe-4">
+                        <button id="themeChangerBtn" class="theme-switch-btn" title="Changer le mode de couleur">
+                            <i id="iconeTheme" class="bi bi-moon-stars-fill text-white"></i>
+                        </button>
+                    </div>
                     <div class="d-flex align-items-center ps-4">
                         <a class="text-decoration-none" href="compte-enseignant.php">
                             <div class="text-end me-3">
@@ -135,47 +198,49 @@ $role_enseignant   = $enseignant['role'] ?? 'Enseignant';
         <div class="card-custom p-4 border-secondary">
             <form method="POST" action="">
                 
-                <h5 class="text-purple fw-bold mb-3 border-bottom border-secondary pb-2"><i class="bi bi-person-lock me-2"></i> Identité (Verrouillée)</h5>
+                <h5 class="text-purple fw-bold mb-3 border-bottom border-secondary pb-2"><i class="bi bi-person-lock me-2"></i> Identité & Rôle</h5>
                 <div class="row g-3 mb-4">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label class="form-label small text-muted-custom mb-1">Nom de famille</label>
-                        <input type="text" class="form-control bg-dark text-white border-secondary opacity-50" value="<?php echo htmlspecialchars($nom_enseignant); ?>" readonly>
+                        <input type="text" class="form-control border-secondary opacity-50" value="<?php echo htmlspecialchars($nom_enseignant); ?>" readonly>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label class="form-label small text-muted-custom mb-1">Prénom</label>
-                        <input type="text" class="form-control bg-dark text-white border-secondary opacity-50" value="<?php echo htmlspecialchars($prenom_enseignant); ?>" readonly>
+                        <input type="text" class="form-control border-secondary opacity-50" value="<?php echo htmlspecialchars($prenom_enseignant); ?>" readonly>
                     </div>
-                    <div class="col-md-12">
-                        <label class="form-label small text-muted-custom mb-1">Adresse de messagerie académique</label>
-                        <input type="email" class="form-control bg-dark text-white border-secondary opacity-50" value="<?php echo htmlspecialchars($enseignant['email'] ?? ''); ?>" readonly>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted-custom mb-1">Rôle affecté (Département MMI)</label>
+                        <input type="text" class="form-control border-secondary opacity-50" value="<?php echo htmlspecialchars($role_enseignant); ?>" readonly>
                     </div>
                 </div>
 
-                <h5 class="text-purple fw-bold mb-3 border-bottom border-secondary pb-2"><i class="bi bi-shield-check me-2"></i> Rôle & Fonction</h5>
+                <h5 class="text-purple fw-bold mb-3 border-bottom border-secondary pb-2"><i class="bi bi-shield-lock me-2"></i> Sécurité & Authentification</h5>
                 <div class="row g-3 mb-4">
-                    <div class="col-md-8">
-                        <label class="form-label small text-muted-custom mb-1">Attribution au sein du département MMI</label>
-                        <select name="role" class="form-select bg-dark text-white border-secondary" required>
-                            <option value="Enseignant" <?php echo ($role_enseignant === 'Enseignant') ? 'selected' : ''; ?>>Enseignant (Tuteur classique)</option>
-                            <option value="Jury" <?php echo ($role_enseignant === 'Jury') ? 'selected' : ''; ?>>Jury (Évaluation des soutenances)</option>
-                            <option value="Responsable" <?php echo ($role_enseignant === 'Responsable') ? 'selected' : ''; ?>>Responsable des Stages (Pédagogique / Administration)</option>
-                        </select>
+                    <div class="col-md-12">
+                        <label class="form-label small text-muted-custom mb-1">Adresse de messagerie académique</label>
+                        <input type="email" name="email" class="form-control border-secondary" value="<?php echo htmlspecialchars($enseignant['email'] ?? ''); ?>" required>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label small text-muted-custom mb-1">Statut d'approbation</label>
-                        <div class="pt-2">
-                            <?php if (($enseignant['valide'] ?? 0) == 1): ?>
-                                <span class="badge bg-success px-3 py-2 fs-6 w-100"><i class="bi bi-patch-check-fill me-2"></i> Compte Vérifié</span>
-                            <?php else: ?>
-                                <span class="badge bg-warning text-dark px-3 py-2 fs-6 w-100"><i class="bi bi-hourglass-split me-2"></i> En attente</span>
-                            <?php endif; ?>
-                        </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted-custom mb-1">Nouveau mot de passe</label>
+                        <input type="password" name="new_password" class="form-control border-secondary" placeholder="Laisser vide si inchangé">
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted-custom mb-1">Confirmer le nouveau mot de passe</label>
+                        <input type="password" name="confirm_password" class="form-control border-secondary" placeholder="Laisser vide si inchangé">
+                    </div>
+                </div>
+
+                <div class="bg-intranet-dark p-3 rounded border border-warning mb-4" style="box-shadow: 0 0 10px rgba(255, 193, 7, 0.05); background-color: rgba(0,0,0,0.02);">
+                    <label class="form-label small text-warning fw-bold mb-1">
+                        <i class="bi bi-shield-lock-fill me-1"></i> Validation requise
+                    </label>
+                    <p class="text-muted-custom small mb-2">Veuillez renseigner votre mot de passe actuel pour confirmer et enregistrer l'ensemble des modifications.</p>
+                    <input type="password" name="old_password" class="form-control border-warning" placeholder="Entrez votre mot de passe actuel" required>
                 </div>
 
                 <div class="d-grid gap-2">
                     <button type="submit" name="action_update_enseignant" class="btn btn-purple py-2 fw-bold">
-                        <i class="bi bi-save me-2"></i> Mettre à jour mon affectation
+                        <i class="bi bi-save me-2"></i> Enregistrer mes modifications
                     </button>
                 </div>
 
@@ -194,6 +259,34 @@ $role_enseignant   = $enseignant['role'] ?? 'Enseignant';
             </div>
         </div>
     </footer>
-</body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        const themeChangerBtn = document.getElementById('themeChangerBtn');
+        const iconeTheme = document.getElementById('iconeTheme');
+
+        function verifierIconeVisualisation() {
+            if (document.body.classList.contains('light-mode')) {
+                iconeTheme.className = 'bi bi-moon-stars-fill text-white'; 
+            } else {
+                iconeTheme.className = 'bi bi-sun-fill text-warning'; 
+            }
+        }
+
+        verifierIconeVisualisation();
+
+        themeChangerBtn.addEventListener('click', () => {
+            if (document.body.classList.contains('light-mode')) {
+                document.body.classList.remove('light-mode');
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('intranet-theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+                localStorage.setItem('intranet-theme', 'light');
+            }
+            verifierIconeVisualisation();
+        });
+    </script>
+</body>
 </html>

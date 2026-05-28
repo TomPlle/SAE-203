@@ -62,8 +62,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_postuler'])) {
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="icon" type="image/png" href="../images/logo-noir-blanc.png">
+    <script>
+        const themeEnregistre = localStorage.getItem('intranet-theme') || 'light';
+        if (themeEnregistre === 'dark') {
+            document.documentElement.classList.add('dark-theme-init');
+        }
+    </script>
 </head>
-<body class="d-flex flex-column min-vh-100 bg-dark text-white">
+<body id="page-body" class="d-flex flex-column min-vh-100 light-mode">
+    
+    <!-- APPLICATION IMMÉDIATE DU MODE SOMBRE SI BESOIN -->
+    <script>
+        if (localStorage.getItem('intranet-theme') === 'dark') {
+            const bodyEl = document.getElementById('page-body');
+            bodyEl.classList.remove('light-mode');
+            bodyEl.classList.add('dark-mode');
+        }
+    </script>
     <header class="navbar navbar-expand-lg bg-intranet-dark text-white p-0 py-2 border-bottom border-secondary">
         <div class="container-fluid px-4">
             <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4 border-end border-secondary" href="accueil-etudiant.php" style="height: 100%;">
@@ -96,6 +111,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_postuler'])) {
                     </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
+                    <!-- BOUTON DU COMMUTATEUR -->
+                    <div class="pe-4">
+                        <button id="themeChangerBtn" class="theme-switch-btn" title="Changer le mode de couleur">
+                            <i id="iconeTheme" class="bi bi-moon-stars-fill text-white"></i>
+                        </button>
+                    </div>
                     <div class="d-flex align-items-center ps-4">
                         <a class="text-decoration-none" href="compte-etudiant.php">
                             <div class="text-end me-3">
@@ -196,6 +217,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_postuler'])) {
             </div>
         </div>
     </footer>
-</body>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+        
+        <!-- SCRIPT DE GESTION DU CLIC THEME -->
+        <script>
+            const themeChangerBtn = document.getElementById('themeChangerBtn');
+            const iconeTheme = document.getElementById('iconeTheme');
+
+            function verifierIconeVisualisation() {
+                if (document.body.classList.contains('light-mode')) {
+                    iconeTheme.className = 'bi bi-moon-stars-fill text-white'; 
+                } else {
+                    iconeTheme.className = 'bi bi-sun-fill text-warning'; 
+                }
+            }
+
+            verifierIconeVisualisation();
+
+            themeChangerBtn.addEventListener('click', () => {
+                if (document.body.classList.contains('light-mode')) {
+                    document.body.classList.remove('light-mode');
+                    document.body.classList.add('dark-mode');
+                    localStorage.setItem('intranet-theme', 'dark');
+                } else {
+                    document.body.classList.remove('dark-mode');
+                    document.body.classList.add('light-mode');
+                    localStorage.setItem('intranet-theme', 'light');
+                }
+                verifierIconeVisualisation();
+            });
+        </script>
+    </body>
 </html>

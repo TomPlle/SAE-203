@@ -18,7 +18,7 @@ try {
 
 $id_admin = $_SESSION['user']['id_admin'];
 
-// --- AJOUTE CE BLOC POUR RÉPARER L'ERREUR EN ALLANT CHERCHER DANS LA BDD ---
+// Récupération des informations de l'admin
 $stmtInfoAdmin = $pdo->prepare("SELECT nom, prenom FROM admin WHERE id_admin = ?");
 $stmtInfoAdmin->execute([$id_admin]);
 $admin_connecte = $stmtInfoAdmin->fetch(PDO::FETCH_ASSOC);
@@ -44,19 +44,16 @@ $mmi3 = [];
 
 // 3. Filtrage PHP et répartition par promotion
 foreach ($tous_les_etudiants as $e) {
-    // On récupère la démarche la plus récente pour cet étudiant
     $stmtDernier = $pdo->prepare("SELECT reponse FROM historique WHERE id_etudiant = ? ORDER BY date_contact DESC, id_recherche DESC LIMIT 1");
     $stmtDernier->execute([$e['id_etudiant']]);
     $derniere_action = $stmtDernier->fetch(PDO::FETCH_ASSOC);
     
-    // Détermination du statut actuel
     $statut_actuel = "En attente"; 
     if ($derniere_action) {
         $statut_actuel = $derniere_action['reponse'];
     }
     $e['statut_actuel'] = $statut_actuel;
 
-    // --- APPLICATION DES FILTRES ---
     $valide_critere = false;
     if ($search_type === 'statut') {
         if ($statut_actuel === $search_status) {
@@ -74,7 +71,6 @@ foreach ($tous_les_etudiants as $e) {
         }
     }
 
-    // Répartition dans la bonne promotion si le critère général est valide
     if ($valide_critere) {
         if ($e['promo'] === 'MMI 1') {
             $mmi1[] = $e;
@@ -86,7 +82,7 @@ foreach ($tous_les_etudiants as $e) {
     }
 }
 
-// Fonction utilitaire pour générer l'accordéon d'un étudiant avec affichage AGRANDI
+// Fonction utilitaire REPARÉE pour la compatibilité light / dark mode
 function afficher_liste_accordéon($liste_etudiants, $pdo) {
     foreach ($liste_etudiants as $e) {
         $stmtDemarches = $pdo->prepare("SELECT date_contact, entreprise_cible, type_action, reponse FROM historique WHERE id_etudiant = ? ORDER BY date_contact DESC, id_recherche DESC");
@@ -95,8 +91,6 @@ function afficher_liste_accordéon($liste_etudiants, $pdo) {
         
         $collapseId = "collapse_" . $e['id_etudiant'];
         $headingId = "heading_" . $e['id_etudiant'];
-        
-        // Nettoyage de la chaîne promo pour l'ID parent (ex: "MMI 1" -> "MMI1")
         $promoIdClean = str_replace(' ', '', $e['promo']);
 
         if ($e['statut_actuel'] === 'Validé' || $e['statut_actuel'] === 'Convention signée') {
@@ -109,8 +103,8 @@ function afficher_liste_accordéon($liste_etudiants, $pdo) {
             $card_badge_class = "bg-primary text-white";
         }
         ?>
-        <div class="card-custom mb-3 overflow-hidden p-1 shadow-lg border border-secondary">
-            <div class="p-3 bg-intranet-dark text-white border-bottom border-secondary-subtle" 
+        <div class="card-custom mb-3 overflow-hidden shadow-sm border">
+            <div class="p-3 border-bottom card-header-custom" 
                  id="<?= $headingId ?>" 
                  data-bs-toggle="collapse" 
                  data-bs-target="#<?= $collapseId ?>" 
@@ -118,8 +112,8 @@ function afficher_liste_accordéon($liste_etudiants, $pdo) {
                  aria-controls="<?= $collapseId ?>"
                  style="cursor: pointer;">
                 
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="fw-bold fs-4 text-light text-truncate" style="max-width: 70%;"><?= htmlspecialchars($e['nom'] . ' ' . $e['prenom']) ?></span>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold fs-4 text-header-custom text-truncate" style="max-width: 70%;"><?= htmlspecialchars($e['nom'] . ' ' . $e['prenom']) ?></span>
                     <span class="badge bg-purple font-monospace px-3 py-2 fs-6 rounded shadow-sm"><?= count($demarches) ?> action(s)</span>
                 </div>
 
@@ -130,15 +124,15 @@ function afficher_liste_accordéon($liste_etudiants, $pdo) {
                     </span>
                 </div>
 
-                <div class="row g-2 text-muted-custom border-top border-secondary pt-2" style="font-size: 0.95rem;">
-                    <div class="col-12 mb-1 text-truncate text-white fw-semibold">
+                <div class="row g-2 text-muted-custom border-top pt-2 border-secondary-subtle" style="font-size: 0.95rem;">
+                    <div class="col-12 mb-1 text-truncate fw-semibold text-header-custom">
                         <i class="bi bi-envelope text-purple me-2"></i><?= htmlspecialchars($e['email']) ?>
                     </div>
                     <div class="col-6">
-                        <i class="bi bi-collection text-secondary me-1"></i> TD : <strong class="text-light fs-6"><?= htmlspecialchars($e['gp_td']) ?></strong>
+                        <i class="bi bi-collection text-secondary me-1"></i> TD : <strong class="text-header-custom fs-6"><?= htmlspecialchars($e['gp_td']) ?></strong>
                     </div>
                     <div class="col-6">
-                        <i class="bi bi-people text-secondary me-1"></i> TP : <strong class="text-light fs-6"><?= htmlspecialchars($e['gp_tp']) ?></strong>
+                        <i class="bi bi-people text-secondary me-1"></i> TP : <strong class="text-header-custom fs-6"><?= htmlspecialchars($e['gp_tp']) ?></strong>
                     </div>
                     <div class="col-12 mt-2 pt-1 border-top border-secondary-subtle font-monospace text-end text-muted-custom" style="font-size: 0.8rem;">
                         Matricule : <span class="text-info fw-bold fs-6"><?= htmlspecialchars($e['matricule']) ?></span>
@@ -147,8 +141,8 @@ function afficher_liste_accordéon($liste_etudiants, $pdo) {
             </div>
             
             <div id="<?= $collapseId ?>" class="collapse" aria-labelledby="<?= $headingId ?>" data-bs-parent="#accordionSuivi_<?= $promoIdClean ?>">
-                <div class="p-3 bg-dark border-top border-secondary">
-                    <h5 class="text-purple fw-bold mb-3 border-bottom border-secondary pb-1" style="font-size: 1.1rem;">
+                <div class="p-3 accordion-body-custom border-top">
+                    <h5 class="text-purple fw-bold mb-3 border-bottom pb-1 border-secondary-subtle" style="font-size: 1.1rem;">
                         <i class="bi bi-journal-text me-2"></i>Historique détaillé des démarches
                     </h5>
 
@@ -161,7 +155,7 @@ function afficher_liste_accordéon($liste_etudiants, $pdo) {
                             <?php foreach ($demarches as $d): 
                                 $b_class = ($d['reponse'] === 'Validé' || $d['reponse'] === 'Convention signée') ? "bg-success text-white" : (($d['reponse'] === 'Refusé') ? "bg-danger text-white" : (($d['reponse'] === 'En attente') ? "bg-warning text-dark" : "bg-primary text-white"));
                             ?>
-                                <div class="p-3 rounded bg-intranet-dark border border-secondary shadow-sm">
+                                <div class="p-3 rounded border shadow-sm sub-card-custom">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="text-info font-monospace fw-bold fs-6">
                                             <i class="bi bi-calendar3 me-1"></i> <?= date('d/m/Y', strtotime($d['date_contact'])) ?>
@@ -172,11 +166,11 @@ function afficher_liste_accordéon($liste_etudiants, $pdo) {
                                     </div>
                                     <div class="mb-2">
                                         <small class="text-muted-custom d-block text-uppercase" style="font-size: 0.7rem;">Entreprise ciblée</small>
-                                        <strong class="text-white fs-5"><i class="bi bi-building me-2 text-secondary"></i><?= htmlspecialchars($d['entreprise_cible']) ?></strong>
+                                        <strong class="text-header-custom fs-5"><i class="bi bi-building me-2 text-secondary"></i><?= htmlspecialchars($d['entreprise_cible']) ?></strong>
                                     </div>
                                     <div>
                                         <small class="text-muted-custom d-block text-uppercase" style="font-size: 0.7rem;">Action / Étape menée</small>
-                                        <div class="text-light fs-6 ps-1 border-start border-purple mt-1 py-1 bg-dark rounded px-2">
+                                        <div class="text-header-custom fs-6 ps-1 border-start border-purple mt-1 py-1 type-action-badge rounded px-2">
                                             <?= htmlspecialchars($d['type_action']) ?>
                                         </div>
                                     </div>
@@ -191,7 +185,6 @@ function afficher_liste_accordéon($liste_etudiants, $pdo) {
     }
 }
 
-// Détermination dynamique de la taille de la colonne Bootstrap
 $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col-12';
 ?>
 <!DOCTYPE html>
@@ -199,16 +192,29 @@ $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col
 <head>
     <meta charset="UTF-8">
     <title>Suivi des Étudiants - Administration</title> 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="icon" type="image/png" href="../images/logo-noir-blanc.png">
+    <script>
+        const themeEnregistre = localStorage.getItem('intranet-theme') || 'light';
+        if (themeEnregistre === 'dark') {
+            document.documentElement.classList.add('dark-theme-init');
+        }
+    </script>
 </head>
-<body class="d-flex flex-column min-vh-100 bg-dark text-white">
-
+<body id="page-body" class="d-flex flex-column min-vh-100 light-mode">
+    
+    <script>
+        if (localStorage.getItem('intranet-theme') === 'dark') {
+            const bodyEl = document.getElementById('page-body');
+            bodyEl.classList.remove('light-mode');
+            bodyEl.classList.add('dark-mode');
+        }
+    </script>
     <header class="navbar navbar-expand-lg bg-intranet-dark text-white p-0 py-2 border-bottom border-secondary">
         <div class="container-fluid px-4">
-            <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4 border-end border-secondary" href="dashboard-admin.php" style="height: 100%;">
+            <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4 border-end border-secondary" href="dashboard-admin.php">
                 <img src="../images/logo-noir-blanc.png" alt="Logo" class="me-3" style="height: 50px; width: auto;"> 
                 <div class="lh-sm">
                     <div class="fw-bold text-uppercase" style="font-size: 1.1rem; letter-spacing: 1px;">ESPACE ADMIN</div>
@@ -234,6 +240,11 @@ $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col
                     </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
+                    <div class="pe-4">
+                        <button id="themeChangerBtn" class="theme-switch-btn" title="Changer le mode de couleur">
+                            <i id="iconeTheme" class="bi bi-moon-stars-fill text-white"></i>
+                        </button>
+                    </div>
                     <div class="d-flex align-items-center ps-4">
                         <a class="text-decoration-none" href="compte-admin.php">
                             <div class="text-end me-3">
@@ -245,7 +256,7 @@ $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col
                         </a>
                     </div>
                     <div class="ms-2 pe-3">
-                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm" title="Déconnexion"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
                     </div>
                 </div>
             </div>
@@ -257,7 +268,7 @@ $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col
             <h2 class="fw-bold text-purple"><i class="bi bi-people-fill me-2"></i>Suivi des démarches par promotion</h2>
         </div>
 
-        <div class="card-custom p-3 mb-4 bg-intranet-dark">
+        <div class="card-custom p-3 mb-4 bg-intranet-dark-wrapper">
             <form method="GET" action="suivi-etudiant.php" class="row g-2 align-items-center">
                 <div class="col-md-3">
                     <select class="form-select bg-dark text-white border-secondary fw-bold" id="search_type" name="search_type" onchange="toggleSearchInputs()">
@@ -298,10 +309,10 @@ $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col
             
             <?php if ($search_promo === 'toutes' || $search_promo === 'MMI 1'): ?>
                 <div class="<?= $column_class ?>">
-                    <div class="p-3 card-custom h-100" style="background-color: rgba(0,0,0,0.15); border-top: 4px solid #0dcaf0;">
-                        <h4 class="fw-bold text-info mb-3 border-bottom border-secondary pb-2"><i class="bi bi-mortarboard me-2"></i>MMI 1</h4>
+                    <div class="p-3 card-custom h-100 column-promo-wrapper" style="border-top: 4px solid #0dcaf0;">
+                        <h4 class="fw-bold text-info mb-3 border-bottom pb-2 border-secondary-subtle"><i class="bi bi-mortarboard me-2"></i>MMI 1</h4>
                         <?php if (empty($mmi1)): ?>
-                            <p class="text-muted small ps-1">Aucun étudiant trouvé.</p>
+                            <p class="text-muted-custom small ps-1">Aucun étudiant trouvé.</p>
                         <?php else: ?>
                             <div class="accordion accordion-flush" id="accordionSuivi_MMI1"><?php afficher_liste_accordéon($mmi1, $pdo); ?></div>
                         <?php endif; ?>
@@ -311,10 +322,10 @@ $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col
 
             <?php if ($search_promo === 'toutes' || $search_promo === 'MMI 2'): ?>
                 <div class="<?= $column_class ?>">
-                    <div class="p-3 card-custom h-100" style="background-color: rgba(0,0,0,0.15); border-top: 4px solid #0dcaf0;">
-                        <h4 class="fw-bold text-info mb-3 border-bottom border-secondary pb-2"><i class="bi bi-mortarboard me-2"></i>MMI 2</h4>
+                    <div class="p-3 card-custom h-100 column-promo-wrapper" style="border-top: 4px solid #0dcaf0;">
+                        <h4 class="fw-bold text-info mb-3 border-bottom pb-2 border-secondary-subtle"><i class="bi bi-mortarboard me-2"></i>MMI 2</h4>
                         <?php if (empty($mmi2)): ?>
-                            <p class="text-muted small ps-1">Aucun étudiant trouvé.</p>
+                            <p class="text-muted-custom small ps-1">Aucun étudiant trouvé.</p>
                         <?php else: ?>
                             <div class="accordion accordion-flush" id="accordionSuivi_MMI2"><?php afficher_liste_accordéon($mmi2, $pdo); ?></div>
                         <?php endif; ?>
@@ -324,10 +335,10 @@ $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col
 
             <?php if ($search_promo === 'toutes' || $search_promo === 'MMI 3'): ?>
                 <div class="<?= $column_class ?>">
-                    <div class="p-3 card-custom h-100" style="background-color: rgba(0,0,0,0.15); border-top: 4px solid #0dcaf0;">
-                        <h4 class="fw-bold text-info mb-3 border-bottom border-secondary pb-2"><i class="bi bi-mortarboard me-2"></i>MMI 3</h4>
+                    <div class="p-3 card-custom h-100 column-promo-wrapper" style="border-top: 4px solid #0dcaf0;">
+                        <h4 class="fw-bold text-info mb-3 border-bottom pb-2 border-secondary-subtle"><i class="bi bi-mortarboard me-2"></i>MMI 3</h4>
                         <?php if (empty($mmi3)): ?>
-                            <p class="text-muted small ps-1">Aucun étudiant trouvé.</p>
+                            <p class="text-muted-custom small ps-1">Aucun étudiant trouvé.</p>
                         <?php else: ?>
                             <div class="accordion accordion-flush" id="accordionSuivi_MMI3"><?php afficher_liste_accordéon($mmi3, $pdo); ?></div>
                         <?php endif; ?>
@@ -338,7 +349,7 @@ $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col
         </div>
     </main>
 
-    <footer class="bg-black text-white py-2 border-top border-secondary">
+    <footer class="bg-black text-white py-2 border-top border-secondary mt-auto">
         <div class="container-fluid px-4">
             <div class="row align-items-center">
                 <div class="col-12 text-start">
@@ -350,7 +361,7 @@ $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function toggleSearchInputs() {
             const searchType = document.getElementById('search_type').value;
@@ -372,6 +383,31 @@ $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col
             }
         }
         document.addEventListener("DOMContentLoaded", toggleSearchInputs);
+
+        const themeChangerBtn = document.getElementById('themeChangerBtn');
+        const iconeTheme = document.getElementById('iconeTheme');
+
+        function verifierIconeVisualisation() {
+            if (document.body.classList.contains('light-mode')) {
+                iconeTheme.className = 'bi bi-moon-stars-fill text-white'; 
+            } else {
+                iconeTheme.className = 'bi bi-sun-fill text-warning'; 
+            }
+        }
+        verifierIconeVisualisation();
+
+        themeChangerBtn.addEventListener('click', () => {
+            if (document.body.classList.contains('light-mode')) {
+                document.body.classList.remove('light-mode');
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('intranet-theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+                localStorage.setItem('intranet-theme', 'light');
+            }
+            verifierIconeVisualisation();
+        });
     </script>
 </body>
 </html>

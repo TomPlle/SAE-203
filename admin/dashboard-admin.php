@@ -49,9 +49,22 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="icon" type="image/png" href="../images/logo-noir-blanc.png">
+    <script>
+        const themeEnregistre = localStorage.getItem('intranet-theme') || 'light';
+        if (themeEnregistre === 'dark') {
+            document.documentElement.classList.add('dark-theme-init');
+        }
+    </script>
 </head>
-<body class="d-flex flex-column min-vh-100 bg-dark text-white">
-
+<body id="page-body" class="d-flex flex-column min-vh-100 light-mode">
+    
+    <script>
+        if (localStorage.getItem('intranet-theme') === 'dark') {
+            const bodyEl = document.getElementById('page-body');
+            bodyEl.classList.remove('light-mode');
+            bodyEl.classList.add('dark-mode');
+        }
+    </script>
     <header class="navbar navbar-expand-lg bg-intranet-dark text-white p-0 py-2 border-bottom border-secondary">
         <div class="container-fluid px-4">
             <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4 border-end border-secondary" href="dashboard-admin.php" style="height: 100%;">
@@ -64,7 +77,7 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
             <div class="collapse navbar-collapse justify-content-between">
                 <ul class="navbar-nav mx-auto align-items-stretch border-start border-end border-secondary">
                     <li class="nav-item">
-                        <a class="nav-link nav-link-custom active d-flex align-items-center" href="dashboard-admin.php">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="dashboard-admin.php">
                             <i class="bi bi-speedometer2 me-2 fs-4"></i> Vue globale
                         </a>
                     </li>
@@ -80,6 +93,11 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
                     </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
+                    <div class="pe-4">
+                        <button id="themeChangerBtn" class="theme-switch-btn" title="Changer le mode de couleur">
+                            <i id="iconeTheme" class="bi bi-moon-stars-fill text-white"></i>
+                        </button>
+                    </div>
                     <div class="d-flex align-items-center ps-4">
                         <a class="text-decoration-none" href="compte-admin.php">
                             <div class="text-end me-3">
@@ -91,7 +109,7 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
                         </a>
                     </div>
                     <div class="ms-2 pe-3">
-                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm" title="Déconnexion"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
                     </div>
                 </div>
             </div>
@@ -106,17 +124,17 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
 
         <ul class="nav nav-tabs border-secondary mb-4" id="validationTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active text-white border-secondary bg-transparent fw-bold" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab" aria-controls="students" aria-selected="true">
+                <button class="nav-link active border-secondary bg-transparent fw-bold" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab" aria-controls="students" aria-selected="true">
                     Étudiants <span class="badge bg-purple ms-1"><?= count($etudiants) ?></span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link text-white border-secondary bg-transparent fw-bold" id="teachers-tab" data-bs-toggle="tab" data-bs-target="#teachers" type="button" role="tab" aria-controls="teachers" aria-selected="false">
+                <button class="nav-link border-secondary bg-transparent fw-bold" id="teachers-tab" data-bs-toggle="tab" data-bs-target="#teachers" type="button" role="tab" aria-controls="teachers" aria-selected="false">
                     Enseignants <span class="badge bg-purple ms-1"><?= count($enseignants) ?></span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link text-white border-secondary bg-transparent fw-bold" id="tutors-tab" data-bs-toggle="tab" data-bs-target="#tutors" type="button" role="tab" aria-controls="tutors" aria-selected="false">
+                <button class="nav-link border-secondary bg-transparent fw-bold" id="tutors-tab" data-bs-toggle="tab" data-bs-target="#tutors" type="button" role="tab" aria-controls="tutors" aria-selected="false">
                     Maîtres de Stage <span class="badge bg-purple ms-1"><?= count($maitres) ?></span>
                 </button>
             </li>
@@ -132,7 +150,7 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
                 <?php else: ?>
                     <div class="card-custom p-4">
                         <div class="table-responsive">
-                            <table class="table table-dark table-striped align-middle m-0">
+                            <table class="table table-striped align-middle m-0">
                                 <thead>
                                     <tr class="text-muted-custom">
                                         <th>Matricule</th>
@@ -156,8 +174,8 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
                                             <td class="small text-muted-custom"><?= htmlspecialchars($e['adresse'] ?? 'Non renseignée') ?></td>
                                             <td>
                                                 <span class="badge bg-secondary"><?= htmlspecialchars($e['promo']) ?></span>
-                                                <span class="badge bg-dark border border-secondary">TD: <?= htmlspecialchars($e['gp_td']) ?></span>
-                                                <span class="badge bg-dark border border-secondary">TP: <?= htmlspecialchars($e['gp_tp']) ?></span>
+                                                <span class="badge bg-dark border border-secondary text-white">TD: <?= htmlspecialchars($e['gp_td']) ?></span>
+                                                <span class="badge bg-dark border border-secondary text-white">TP: <?= htmlspecialchars($e['gp_tp']) ?></span>
                                             </td>
                                             <td class="text-end">
                                                 <div class="btn-group">
@@ -182,7 +200,7 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
                 <?php else: ?>
                     <div class="card-custom p-4">
                         <div class="table-responsive">
-                            <table class="table table-dark table-striped align-middle m-0">
+                            <table class="table table-striped align-middle m-0">
                                 <thead>
                                     <tr class="text-muted-custom">
                                         <th>Nom / Prénom</th>
@@ -220,7 +238,7 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
                 <?php else: ?>
                     <div class="card-custom p-4">
                         <div class="table-responsive">
-                            <table class="table table-dark table-striped align-middle m-0">
+                            <table class="table table-striped align-middle m-0">
                                 <thead>
                                     <tr class="text-muted-custom">
                                         <th>Nom / Prénom</th>
@@ -266,7 +284,34 @@ $maitres = $reqMaitres->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </footer>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        const themeChangerBtn = document.getElementById('themeChangerBtn');
+        const iconeTheme = document.getElementById('iconeTheme');
+
+        function verifierIconeVisualisation() {
+            if (document.body.classList.contains('light-mode')) {
+                iconeTheme.className = 'bi bi-moon-stars-fill text-white'; 
+            } else {
+                iconeTheme.className = 'bi bi-sun-fill text-warning'; 
+            }
+        }
+
+        verifierIconeVisualisation();
+
+        themeChangerBtn.addEventListener('click', () => {
+            if (document.body.classList.contains('light-mode')) {
+                document.body.classList.remove('light-mode');
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('intranet-theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+                localStorage.setItem('intranet-theme', 'light');
+            }
+            verifierIconeVisualisation();
+        });
+    </script>
 </body>
 </html>

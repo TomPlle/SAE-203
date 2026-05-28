@@ -1,51 +1,49 @@
-.bg-intranet-dark {
-    background-color: #000000; /* Couleur du background */
+body {
+    transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Liens de navigation grands et espacés */
+/* ==========================================================================
+   1. CONFIGURATION COMMUNES ET NAVBAR (Reste noire dans les deux modes)
+   ========================================================================== */
+.bg-intranet-dark {
+    background-color: #000000 !important;
+}
+
 .nav-link-custom {
-    color: #ffffff !important; /* Couleur du texte */
-    font-size: 1.2rem !important; /* Texte plus grand */
-    padding: 1rem 2rem !important; /* Plus d'espace interne */
+    color: #ffffff !important;
+    font-size: 1.2rem !important; 
+    padding: 1rem 2rem !important; 
     transition: background-color 0.2s;
 }
 
 .nav-link-custom:hover, .nav-link-custom.active {
-    background-color: #0a192f;  /* Couleur du background de la nav-bar */
+    background-color: #0a192f !important;  
+    color: #ffffff !important;
 }
 
-.text-muted-custom {
-    color: #a0aab2;
-}
-
-/* Ajustement des séparateurs verticaux à droite */
 .separator-right {
-    border-left: 1px solid #333;
+    border-left: 1px solid #333333 !important;
 }
 
-/* Styles spécifiques au Dashboard */
 .card-custom {
-    background-color: #161b22;
-    border: 1px solid #30363d;
     border-radius: 12px;
-    transition: transform 0.2s;
+    transition: transform 0.2s, border-color 0.2s;
 }
 
 .card-custom:hover {
-    border-color: #8b5cf6; /* Accent violet au survol */
+    border-color: #8b5cf6 !important;
 }
 
 .btn-purple {
-    background-color: #6d28d9;
-    color: white;
+    background-color: #6d28d9 !important;
+    color: white !important;
     border: none;
     border-radius: 8px;
     padding: 10px 20px;
 }
 
 .btn-purple:hover {
-    background-color: #5b21b6;
-    color: white;
+    background-color: #5b21b6 !important;
 }
 
 .status-badge {
@@ -56,108 +54,245 @@
     color: #22c55e;
 }
 
-.app-icon {
-    width: 60px;
-    height: 60px;
-    background-color: #30363d;
-    border-radius: 12px;
-    display: flex;
+.theme-switch-btn {
+    background: transparent !important;
+    border: 1px solid #333333 !important;
+    color: #ffffff !important;
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 10px;
-    font-size: 1.5rem;
 }
 
-/* 
-==========================================================================
-Formulaire d'Inscription
-========================================================================== 
-*/
+.theme-switch-btn:hover {
+    border-color: #6d28d9 !important;
+}
 
-/* Personnalisation des champs de saisie et des listes déroulantes */
-.form-control, 
-.form-select {
+/* ==========================================================================
+   2. CONFIGURATION DU MODE SOMBRE (DARK MODE)
+   ========================================================================== */
+body.dark-mode {
+    background-color: #161b22 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .text-muted-custom {
+    color: #a0aab2 !important;
+}
+
+body.dark-mode .text-white-50 {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+body.dark-mode .card-custom {
+    background-color: #1a1a1a !important;
+    border: 1px solid #2d2d2d !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .form-control, body.dark-mode .form-select {
     background-color: #0d1117 !important;
     color: #ffffff !important;
     border: 1px solid #30363d !important;
-    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-/* Style lors du clic/focus sur un champ */
-.form-control:focus, 
-.form-select:focus {
-    background-color: #0d1117 !important;
-    color: #ffffff !important;
-    border-color: #8b5cf6 !important; /* Lueur violette assortie au survol des cartes */
-    box-shadow: 0 0 0 0.25rem rgba(139, 92, 246, 0.25) !important;
-}
-
-/* Ajustement de l'icône du calendrier pour les inputs de type date */
-input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1); /* Rend l'icône blanche pour le thème sombre */
+body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1); 
     cursor: pointer;
 }
 
-/* Style de l'affichage des sections de rôles dynamiques */
-.role-fields {
-    transition: all 0.3s ease-in-out;
-}
-
-/* Style du placeholder pour les navigateurs modernes (Chrome, Firefox, Safari, Edge) */
-.form-control::placeholder {
-    color: #a0aab2 !important; /* Utilise la même couleur claire que vos labels text-muted-custom */
-    opacity: 0.75 !important;  /* Augmente l'opacité pour qu'il ressorte mieux */
-    font-style: italic;        /* Optionnel : met en italique pour bien le différencier d'un texte déjà saisi */
-}
-
-/* Compatibilité pour Internet Explorer / Edge plus anciens */
-.form-control:-ms-input-placeholder {
-    color: #a0aab2 !important;
-    opacity: 0.75 !important;
-    font-style: italic;
-}
-
-/* Structure de la carte élargie pour le tableau */
-.card-custom {
-    background-color: #1a1a1a; /* Teinte sombre légèrement plus claire que le bg-dark */
-    border: 1px solid #2d2d2d;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-}
-
-/* Alignement et bordures du tableau */
-.custom-table-da {
-    --bs-table-bg: transparent !important; /* Utilise le fond de la carte */
+body.dark-mode .table {
+    --bs-table-bg: transparent !important;
     --bs-table-hover-bg: rgba(255, 255, 255, 0.03) !important;
-    border-color: #2d2d2d;
+    --bs-table-color: #ffffff !important;
+    border-color: #2d2d2d !important;
 }
 
-.custom-table-da th, 
-.custom-table-da td {
-    border-bottom: 1px solid #2d2d2d;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+body.dark-mode .table th, body.dark-mode .table td {
+    color: #ffffff !important;
 }
 
-/* Encapsulation propre des mots de passe (style code) */
-.text-info-custom {
-    color: #a5d6ff;
-    background-color: rgba(165, 214, 255, 0.1);
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-family: var(--bs-font-monospace);
-    font-size: 0.9rem;
+/* ==========================================================================
+   3. CONFIGURATION DU MODE CLAIR (LIGHT MODE PAR DÉFAUT)
+   ========================================================================== */
+body.light-mode {
+    background-color: #f0f2f5 !important; 
+    color: #111827 !important;
 }
 
-/* Badges distinctifs pour le type de compte */
-.bg-admin-tag {
-    background-color: rgba(248, 113, 113, 0.15) !important;
-    color: #f87171 !important;
-    border: 1px solid rgba(248, 113, 113, 0.3);
+body.light-mode .card-custom {
+    background-color: #ffffff !important; 
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+    color: #111827 !important;
 }
 
-.bg-student-tag {
-    background-color: rgba(156, 163, 175, 0.15) !important;
-    color: #d1d5db !important;
-    border: 1px solid rgba(156, 163, 175, 0.3);
+/* Fixation des compteurs et chiffres globaux dans les tableaux de bord */
+body.light-mode h2, body.light-mode h3, body.light-mode h4, body.light-mode h5, body.light-mode h6,
+body.light-mode .card-custom h2, body.light-mode .card-custom h3, body.light-mode .card-custom span:not(.badge) {
+    color: #111827 !important;
+}
+
+/* Forcer les textes descriptifs à être lisibles en mode clair */
+body.light-mode .text-muted-custom, body.light-mode .text-white-50, body.light-mode p.text-white-50 {
+    color: #4b5563 !important; 
+}
+
+/* Correction complète des Tableaux Sombres en mode Clair */
+body.light-mode .table {
+    --bs-table-bg: #ffffff !important;
+    --bs-table-striped-bg: #f9fafb !important;
+    --bs-table-hover-bg: #f3f4f6 !important;
+    --bs-table-color: #111827 !important;
+    color: #111827 !important;
+    border-color: #e5e7eb !important;
+}
+
+body.light-mode .table-responsive, body.light-mode .table th, body.light-mode .table td {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+}
+
+body.light-mode .table thead tr, body.light-mode .table thead th {
+    background-color: #f3f4f6 !important;
+    color: #374151 !important;
+    font-weight: bold;
+}
+
+/* Formulaires */
+body.light-mode .form-control, body.light-mode .form-select {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #c8d1d9 !important;
+}
+
+body.light-mode input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0) !important; 
+}
+
+/* Boutons secondaires en Light Mode */
+body.light-mode .d-grid .btn-outline-light {
+    background-color: #1f2937 !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+body.light-mode footer {
+    background-color: #e5e7eb !important;
+    border-top: 1px solid #d1d5db !important;
+}
+
+body.light-mode footer p {
+    color: #4b5563 !important;
+}
+
+/* Isolation du texte sur l'image du campus */
+body.light-mode .bg-gradient-dark,
+body.light-mode .bg-gradient-dark h2, 
+body.light-mode .bg-gradient-dark p,
+body.light-mode .bg-gradient-dark .fw-bold {
+    color: #ffffff !important;
+}
+
+/* ==========================================================================
+   4. ETATS SPECIFIQUES POUR LE STEPPER DE L'ETUDIANT (Correction surbrillance)
+   ========================================================================== */
+/* Cas Désactivé (Hors statut actuel) */
+.stepper-disabled {
+    opacity: 0.35 !important;
+    box-shadow: none !important;
+}
+
+/* Mode sombre - États actifs */
+body.dark-mode .stepper-recherche.stepper-active { border-color: #0dcaf0 !important; box-shadow: 0 0 15px rgba(13, 202, 240, 0.4) !important; opacity: 1 !important; }
+body.dark-mode .stepper-entretien.stepper-active { border-color: #0d6efd !important; box-shadow: 0 0 15px rgba(13, 110, 253, 0.4) !important; opacity: 1 !important; }
+body.dark-mode .stepper-convention.stepper-active { border-color: #198754 !important; box-shadow: 0 0 15px rgba(25, 135, 84, 0.4) !important; opacity: 1 !important; }
+
+/* Mode clair - États actifs */
+body.light-mode .stepper-recherche.stepper-active { background-color: #e0f7fa !important; border-color: #0dcaf0 !important; box-shadow: 0 4px 12px rgba(13, 202, 240, 0.2) !important; opacity: 1 !important; }
+body.light-mode .stepper-entretien.stepper-active { background-color: #e8f0fe !important; border-color: #0d6efd !important; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2) !important; opacity: 1 !important; }
+body.light-mode .stepper-convention.stepper-active { background-color: #e8f5e9 !important; border-color: #198754 !important; box-shadow: 0 4px 12px rgba(25, 135, 84, 0.2) !important; opacity: 1 !important; }
+
+/* Surcharges dynamiques globales adaptées au thème actif */
+body.dark-mode .card-header-custom { background-color: #000000 !important; border-color: #2d2d2d !important; }
+body.dark-mode .accordion-body-custom { background-color: #161b22 !important; border-color: #2d2d2d !important; }
+body.dark-mode .sub-card-custom { background-color: #000000 !important; border-color: #2d2d2d !important; }
+body.dark-mode .type-action-badge { background-color: #161b22 !important; }
+body.dark-mode .text-header-custom { color: #ffffff !important; }
+body.dark-mode .bg-intranet-dark-wrapper { background-color: #000000 !important; border: 1px solid #2d2d2d !important; }
+body.dark-mode .column-promo-wrapper { background-color: rgba(0,0,0,0.15) !important; }
+
+body.light-mode .card-header-custom { background-color: #ffffff !important; border-color: #e5e7eb !important; }
+body.light-mode .accordion-body-custom { background-color: #f9fafb !important; border-color: #e5e7eb !important; }
+body.light-mode .sub-card-custom { background-color: #ffffff !important; border-color: #e5e7eb !important; }
+body.light-mode .type-action-badge { background-color: #f3f4f6 !important; }
+body.light-mode .text-header-custom { color: #111827 !important; }
+body.light-mode .bg-intranet-dark-wrapper { background-color: #ffffff !important; border: 1px solid #d1d5db !important; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important; }
+body.light-mode .column-promo-wrapper { background-color: #ffffff !important; }
+
+/* ==========================================================================
+   FIXATION DES CHIFFRES DE COMPTEURS (BADGES) EN MODE CLAIR
+   ========================================================================== */
+
+/* Force les chiffres des badges (comme .badge) à s'afficher en noir/foncé en mode clair */
+body.light-mode .nav-tabs .badge,
+body.light-mode main .badge.bg-purple,
+body.light-mode main .badge {
+    background-color: #6d28d9 !important; /* Maintient le fond violet ou ajuste la couleur si tu préfères */
+    color: #ffffff !important; /* S'il est sur fond violet, le blanc reste lisible. */
+}
+
+/* SI les badges deviennent blancs avec l'ancien CSS et que l'écriture devient invisible : */
+body.light-mode .nav-tabs .nav-item .badge {
+    background-color: #f3f4f6 !important; /* Met un fond gris clair très propre derrière le chiffre */
+    color: #111827 !important;            /* Force le chiffre en noir/sombre */
+    border: 1px solid #d1d5db !important;  /* Ajoute une petite bordure de séparation */
+}
+
+/* Force également les compteurs globaux du dashboard ou des onglets s'ils utilisent des balises span ou code */
+body.light-mode .badge span,
+body.light-mode .nav-link .badge {
+    color: #111827 !important;
+}
+
+/* ==========================================================================
+   FORCE LES VRAIES COULEURS DE STATUT SUR LES BADGES (ANNULE LE VIOLET)
+   ========================================================================== */
+
+/* Statut : Validé / Convention signée (VERT) */
+body.light-mode .card-custom .badge.bg-success {
+    background-color: #198754 !important;
+    color: #ffffff !important;
+}
+
+/* Statut : En attente (JAUNE) */
+body.light-mode .card-custom .badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #111827 !important; /* Texte noir pour le contraste sur le jaune */
+}
+
+/* Statut : Refusé (ROUGE) */
+body.light-mode .card-custom .badge.bg-danger {
+    background-color: #dc3545 !important;
+    color: #ffffff !important;
+}
+
+/* Statut : Entretien / Autre (BLEU) */
+body.light-mode .card-custom .badge.bg-primary {
+    background-color: #0d6efd !important;
+    color: #ffffff !important;
+}
+
+/* Adaptation de l'encadré dynamique de rôle selon le thème */
+body.dark-mode .role-fields-box {
+    background-color: #0d1117 !important;
+    border: 1px dashed #30363d !important;
+}
+
+body.light-mode .role-fields-box {
+    background-color: #f8fafc !important; /* Gris très clair harmonieux */
+    border: 1px dashed #cbd5e1 !important; /* Bordure discrète */
 }

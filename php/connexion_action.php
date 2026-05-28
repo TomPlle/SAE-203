@@ -51,19 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    // 4. Chercher dans Maître de stage
-    $stmt = $pdo->prepare("SELECT * FROM maître_de_stage WHERE email_pro = ?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($user && password_verify($password, $user['password'])) {
-        if ($user['valide'] == 0) { die("Votre compte maître de stage est en attente de validation."); }
-        $_SESSION['user'] = $user;
-        $_SESSION['role'] = 'maitre';
-        header("Location: ../dashboard-maitre.html"); // À créer si besoin
-        exit();
-    }
-
     // Si aucun utilisateur n'est trouvé
     header("Location: ../index.html?error=bad_credentials");
     exit();

@@ -43,7 +43,14 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     exit();
 }
 
-// 3. ENREGISTREMENT D'UNE NOUVELLE ÉTAPE (INSERTION STANDARD)
+// 3. ENREGISTREMENT D'UNE NOUVELLE ÉTAPE (MODIFIÉ AVEC ENCLENCHEMENT LOGIQUE STAGE)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_demarche'])) {
+    $entreprise = trim($_POST['entreprise_cible']);
+    $date_contact = $_POST['date_contact'];
+    $type_action = trim($_POST['type_action']);
+    $reponse = $_POST['reponse'];
+
+    // 3. ENREGISTREMENT D'UNE NOUVELLE ÉTAPE (CORRIGÉ AVEC etat_validation)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_demarche'])) {
     $entreprise = trim($_POST['entreprise_cible']);
     $date_contact = $_POST['date_contact'];
@@ -52,11 +59,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_demarche'])) 
 
     if (!empty($entreprise) && !empty($date_contact) && !empty($type_action) && !empty($reponse)) {
         try {
-            $stmtInsert = $pdo->prepare("INSERT INTO historique (entreprise_cible, date_contact, type_action, reponse, id_etudiant) VALUES (?, ?, ?, ?, ?)");
-            $stmtInsert->execute([$entreprise, $date_contact, $type_action, $reponse, $id_etudiant]);
-            $message = "Nouvelle étape enregistrée avec succès !";
-            $message_type = "success";
+            // Si le statut déclaré requiert la validation d'un stage physique
+            if ($reponse === 'Validé' && isset($_POST['nom_entreprise'])) {
+                
+                $nom_ent     = trim($_POST['nom_entreprise']);
+                $adresse_ent = trim($_POST['adresse_entreprise']);
+                $tel_ent     = trim($_POST['tel_entreprise']);
+                $secteur_ent = trim($_POST['secteur_entreprise']);
+                
+                $sujet_stage = trim($_POST['sujet_stage']);
+                $desc_stage  = trim($_POST['description_stage']);
+                $date_debut  = $_POST['date_debut'];
+                $date_fin    = $_POST['date_fin'];
+
+                $pdo->beginTransaction();
+
+                // Insertion de la structure d'accueil
+                $stmtEnt = $pdo->prepare("INSERT INTO entreprise (nom_societe, adresse, tel, secteur) VALUES (?, ?, ?, ?)");
+                $stmtEnt->execute([$nom_ent, $adresse_ent, $tel_ent, $secteur_ent]);
+                $id_entreprise_creee = $pdo->lastInsertId();
+
+                // REPARATION : Utilisation du champ 'etat_validation' à la place de 'valide'
+                $stmtStage = $pdo->prepare("
+                    INSERT INTO stage (id_etudiant, id_entreprise, sujet, description, date_debut, date_fin, etat_validation) 
+                    VALUES (?, ?, ?, ?, ?, ?, 0)
+                ");
+                $stmtStage->execute([$id_etudiant, $id_entreprise_creee, $sujet_stage, $desc_stage, $date_debut, $date_fin]);
+
+                // On force l'historique de l'élève à l'état tampon d'attente
+                $reponse = "En attente de validation responsable";
+
+                $stmtInsert = $pdo->prepare("INSERT INTO historique (entreprise_cible, date_contact, type_action, reponse, id_etudiant) VALUES (?, ?, ?, ?, ?)");
+                $stmtInsert->execute([$nom_ent, $date_contact, $type_action, $reponse, $id_etudiant]);
+
+                $pdo->commit();
+                $message = "Fiche de stage soumise ! Votre démarche restera en attente jusqu'à l'approbation du responsable des stages.";
+                $message_type = "warning";
+
+            } else {
+                // Traitement standard pour les autres statuts (Refusé, En attente classique...)
+                $stmtInsert = $pdo->prepare("INSERT INTO historique (entreprise_cible, date_contact, type_action, reponse, id_etudiant) VALUES (?, ?, ?, ?, ?)");
+                $stmtInsert->execute([$entreprise, $date_contact, $type_action, $reponse, $id_etudiant]);
+                $message = "Nouvelle étape enregistrée avec succès !";
+                $message_type = "success";
+            }
         } catch (PDOException $e) {
+            if ($pdo->inTransaction()) { $pdo->rollBack(); }
             $message = "Erreur lors de l'enregistrement : " . $e->getMessage();
             $message_type = "danger";
         }
@@ -76,13 +124,26 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <title>Mes Démarches - Étudiant</title> 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="icon" type="image/png" href="../images/logo-noir-blanc.png">
+    <script>
+        const themeEnregistre = localStorage.getItem('intranet-theme') || 'light';
+        if (themeEnregistre === 'dark') {
+            document.documentElement.classList.add('dark-theme-init');
+        }
+    </script>
 </head>
-<body class="d-flex flex-column min-vh-100 bg-dark text-white">
+<body id="page-body" class="d-flex flex-column min-vh-100 light-mode">
     
+    <script>
+        if (localStorage.getItem('intranet-theme') === 'dark') {
+            const bodyEl = document.getElementById('page-body');
+            bodyEl.classList.remove('light-mode');
+            bodyEl.classList.add('dark-mode');
+        }
+    </script>
     <header class="navbar navbar-expand-lg bg-intranet-dark text-white p-0 py-2 border-bottom border-secondary">
         <div class="container-fluid px-4">
             <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4 border-end border-secondary" href="accueil-etudiant.php" style="height: 100%;">
@@ -99,7 +160,7 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
                             <i class="bi bi-house-door me-2 fs-4"></i> Accueil
                         </a>
                     </li>
-                    <li class="nav-item border-start border-secondary">
+                    <li class="nav-item">
                         <a class="nav-link nav-link-custom active d-flex align-items-center" href="demarches-etudiant.php">
                             <i class="bi bi-folder me-2 fs-4"></i> Démarches
                         </a>
@@ -111,6 +172,11 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
                     </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
+                    <div class="pe-4">
+                        <button id="themeChangerBtn" class="theme-switch-btn" title="Changer le mode de couleur">
+                            <i id="iconeTheme" class="bi bi-moon-stars-fill text-white"></i>
+                        </button>
+                    </div>
                     <div class="d-flex align-items-center ps-4">
                         <a class="text-decoration-none" href="compte-etudiant.php">
                             <div class="text-end me-3">
@@ -122,7 +188,7 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
                         </a>
                     </div>
                     <div class="ms-2 pe-3">
-                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm" title="Déconnexion"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm" title="Déconnexion"><i class="bi bi-box-arrow-right"></i></a>
                     </div>
                 </div>
             </div>
@@ -131,12 +197,12 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
 
     <main class="container-fluid px-4 py-4 flex-grow-1">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold m-0"><i class="bi bi-journal-text text-purple me-2"></i>Suivi historique de mes démarches</h2>
+            <h2 class="fw-bold m-0 text-header-custom"><i class="bi bi-journal-text text-purple me-2"></i>Suivi historique de mes démarches</h2>
             <a href="?export=csv" class="btn btn-success fw-bold"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Exporter vers Sheet / Excel</a>
         </div>
 
         <?php if (!empty($message)): ?>
-            <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show bg-dark text-white border-<?php echo $message_type; ?> mb-4" role="alert">
+            <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show text-white border-0 mb-4" role="alert" style="background-color: var(--bs-alert-bg, #6d28d9);">
                 <?php echo $message; ?>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
             </div>
@@ -144,8 +210,8 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
 
         <div class="row g-4">
             <div class="col-xl-4">
-                <div class="card-custom p-4">
-                    <h5 class="fw-bold text-white mb-3 border-bottom border-secondary pb-2">
+                <div class="card-custom p-4 shadow-sm">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">
                         <i class="bi bi-plus-square text-purple me-2"></i>Déclarer une nouvelle étape
                     </h5>
                     <form action="demarches-etudiant.php" method="POST">
@@ -166,13 +232,55 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
 
                         <div class="mb-4">
                             <label for="reponse" class="form-label small text-muted-custom">Statut associé à cette date *</label>
-                            <select id="reponse" name="reponse" class="form-select" required>
+                            <select id="reponse" name="reponse" class="form-select" onchange="toggleFormulaireStage(this)" required>
                                 <option value="En attente" selected>⏳ En attente de réponse</option>
                                 <option value="Entretien prévu">📅 Entretien prévu</option>
                                 <option value="Entretien">📅 Entretien passé</option>
                                 <option value="Refusé">❌ Refusé</option>
                                 <option value="Validé">✅ Validé / Convention signée</option>
                             </select>
+                        </div>
+
+                        <div id="formulaire-details-stage" class="mb-4 p-3 rounded role-fields-box" style="display: none; border: 1px dashed #6d28d9;">
+                            <h6 class="text-purple fw-bold mb-2"><i class="bi bi-building me-2"></i> Données de l'Entreprise</h6>
+                            <div class="mb-2">
+                                <label class="small text-muted-custom">Raison Sociale Nom complet *</label>
+                                <input type="text" name="nom_entreprise" class="form-control form-control-sm">
+                            </div>
+                            <div class="mb-2">
+                                <label class="small text-muted-custom">Adresse complète du siège *</label>
+                                <input type="text" name="adresse_entreprise" class="form-control form-control-sm">
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="small text-muted-custom">Téléphone Standard</label>
+                                    <input type="text" name="tel_entreprise" class="form-control form-control-sm">
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted-custom">Secteur Activité</label>
+                                    <input type="text" name="secteur_entreprise" class="form-control form-control-sm" placeholder="Ex: Web, Pub">
+                                </div>
+                            </div>
+
+                            <h6 class="text-purple fw-bold mb-2 border-top pt-2"><i class="bi bi-briefcase me-2"></i> Spécifications du Stage</h6>
+                            <div class="mb-2">
+                                <label class="small text-muted-custom">Intitulé des fonctions *</label>
+                                <input type="text" name="sujet_stage" class="form-control form-control-sm" placeholder="Ex: Designer UI">
+                            </div>
+                            <div class="mb-2">
+                                <label class="small text-muted-custom">Missions détaillées *</label>
+                                <textarea name="description_stage" rows="2" class="form-control form-control-sm"></textarea>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="small text-muted-custom">Date de début *</label>
+                                    <input type="date" name="date_debut" class="form-control form-control-sm">
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted-custom">Date de fin *</label>
+                                    <input type="date" name="date_fin" class="form-control form-control-sm">
+                                </div>
+                            </div>
                         </div>
 
                         <button type="submit" name="ajouter_demarche" class="btn btn-purple w-100 fw-bold text-uppercase py-2">
@@ -183,8 +291,8 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
             </div>
 
             <div class="col-xl-8">
-                <div class="card-custom p-4">
-                    <h5 class="fw-bold text-white mb-3 border-bottom border-secondary pb-2">
+                <div class="card-custom p-4 shadow-sm">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">
                         <i class="bi bi-clock-history text-purple me-2"></i>Flux de recherche temporel
                     </h5>
                     
@@ -194,9 +302,9 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     <?php else: ?>
                         <div class="table-responsive">
-                            <table class="table table-dark table-hover align-middle border-secondary m-0">
+                            <table class="table table-striped align-middle border m-0">
                                 <thead>
-                                    <tr class="text-muted-custom border-bottom border-secondary">
+                                    <tr class="text-muted-custom">
                                         <th>Entreprise</th>
                                         <th>Date de l'action</th>
                                         <th>Action / Étape franchie</th>
@@ -207,23 +315,25 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
                                     <?php foreach ($demarches as $d): 
                                         $status_text = htmlspecialchars($d['reponse']);
                                         
-                                        // Attribution de la classe Bootstrap de couleur du badge
                                         if ($d['reponse'] === 'Validé' || $d['reponse'] === 'Convention signée') {
-                                            $badge_class = "bg-success text-white"; // Vert
+                                            $badge_class = "bg-success text-white";
                                         } elseif ($d['reponse'] === 'Refusé') {
-                                            $badge_class = "bg-danger text-white"; // Rouge
+                                            $badge_class = "bg-danger text-white";
                                         } elseif ($d['reponse'] === 'En attente') {
-                                            $badge_class = "bg-warning text-dark"; // Jaune
+                                            $badge_class = "bg-warning text-dark";
+                                        } elseif ($d['reponse'] === 'En attente de validation responsable') {
+                                            $badge_class = "bg-warning text-dark border border-danger";
+                                            $status_text = "⏳ Attente Prof";
                                         } elseif ($d['reponse'] === 'Entretien' || $d['reponse'] === 'Entretien prévu') {
-                                            $badge_class = "bg-primary text-white"; // Bleu pour le suivi entretien
+                                            $badge_class = "bg-primary text-white";
                                         } else {
                                             $badge_class = "bg-secondary text-white";
                                         }
                                     ?>
-                                        <tr class="border-bottom border-secondary-subtle">
-                                            <td class="fw-bold text-white"><?php echo htmlspecialchars($d['entreprise_cible']); ?></td>
+                                        <tr>
+                                            <td class="fw-bold text-header-custom"><?php echo htmlspecialchars($d['entreprise_cible']); ?></td>
                                             <td class="font-monospace text-info small"><i class="bi bi-calendar3 me-2"></i><?php echo date('d/m/Y', strtotime($d['date_contact'])); ?></td>
-                                            <td><span class="text-light"><?php echo htmlspecialchars($d['type_action']); ?></span></td>
+                                            <td class="text-header-custom"><?php echo htmlspecialchars($d['type_action']); ?></td>
                                             <td class="text-end">
                                                 <span class="badge <?php echo $badge_class; ?> px-3 py-2 rounded-pill fw-bold" style="font-size: 0.85rem;">
                                                     <?php echo $status_text; ?>
@@ -240,18 +350,52 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </main>
 
-    <footer class="bg-black text-white py-2 border-top border-secondary">
+    <footer class="bg-black text-white py-2 border-top border-secondary mt-auto">
         <div class="container-fluid px-4">
-            <div class="row align-items-center">
-                <div class="col-12 text-start">
-                    <p class="m-0 text-muted-custom" style="font-size: 0.85rem; font-family: sans-serif;">
-                        &copy; 2026 Université Gustave Eiffel - Tom Pelloile - Robin Maréchal - Emerick Angel
-                    </p>
-                </div>
-            </div>
+            <p class="m-0 text-muted-custom" style="font-size: 0.85rem;">
+                &copy; 2026 Université Gustave Eiffel - Tom Pelloile - Robin Maréchal - Emerick Angel
+            </p>
         </div>
     </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Fonction d'affichage / masquage du sous-formulaire entreprise et stage
+        function toggleFormulaireStage(selectObj) {
+            const targetBox = document.getElementById('formulaire-details-stage');
+            if(selectObj.value === 'Validé') {
+                targetBox.style.display = 'block';
+                targetBox.querySelectorAll('input, textarea').forEach(el => el.required = true);
+            } else {
+                targetBox.style.display = 'none';
+                targetBox.querySelectorAll('input, textarea').forEach(el => el.required = false);
+            }
+        }
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+        const themeChangerBtn = document.getElementById('themeChangerBtn');
+        const iconeTheme = document.getElementById('iconeTheme');
+
+        function verifierIconeVisualisation() {
+            if (document.body.classList.contains('light-mode')) {
+                iconeTheme.className = 'bi bi-moon-stars-fill text-white'; 
+            } else {
+                iconeTheme.className = 'bi bi-sun-fill text-warning'; 
+            }
+        }
+        verifierIconeVisualisation();
+
+        themeChangerBtn.addEventListener('click', () => {
+            if (document.body.classList.contains('light-mode')) {
+                document.body.classList.remove('light-mode');
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('intranet-theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+                localStorage.setItem('intranet-theme', 'light');
+            }
+            verifierIconeVisualisation();
+        });
+    </script>
 </body>
 </html>

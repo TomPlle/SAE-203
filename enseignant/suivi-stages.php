@@ -21,8 +21,11 @@ $nom_enseignant = $_SESSION['user']['nom'] ?? 'Nom';
 $prenom_enseignant = $_SESSION['user']['prenom'] ?? 'Prénom';
 $role_enseignant = $_SESSION['user']['role'] ?? 'Enseignant';
 
+// Vérification : l'enseignant connecté est-il responsable d'une promotion ?
+$est_un_responsable = (strpos($role_enseignant, 'Responsable-stage-MMI') !== false || strpos($role_enseignant, 'Responsable-Stage-MMI') !== false);
+
 // Variable de droits exclusifs
-$est_responsable_mmi1 = ($role_enseignant === 'Responsable-Stage-MMI1');
+$est_responsable_mmi1 = ($role_enseignant === 'Responsable-Stage-MMI1' || $role_enseignant === 'Responsable-stage-MMI1');
 
 $msg_success = "";
 $msg_error = "";
@@ -206,7 +209,7 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
         ?>
         <div class="card-custom mb-3 overflow-hidden p-1 shadow-lg" style="<?= $custom_border ?>">
             <div class="p-3 bg-intranet-dark text-white border-bottom border-secondary-subtle" 
-                 id="<?= $headingId ?>" data-bs-toggle="collapse" data-bs-target="#<?= $collapseId ?>" aria-expanded="false" style="cursor: pointer;">
+                  id="<?= $headingId ?>" data-bs-toggle="collapse" data-bs-target="#<?= $collapseId ?>" aria-expanded="false" style="cursor: pointer;">
                 
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="fw-bold fs-4 text-light text-truncate" style="max-width: 70%;"><?= htmlspecialchars($e['nom'] . ' ' . $e['prenom']) ?></span>
@@ -227,7 +230,6 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
                     <div class="col-6"><i class="bi bi-collection text-secondary me-1"></i> TD : <strong class="text-light fs-6"><?= htmlspecialchars($e['gp_td']) ?></strong></div>
                     <div class="col-6"><i class="bi bi-people text-secondary me-1"></i> TP : <strong class="text-light fs-6"><?= htmlspecialchars($e['gp_tp']) ?></strong></div>
                     
-                    <!-- Raccourci d'action pour le responsable directement sur le header de la carte -->
                     <?php if ($est_responsable_mmi1 && $e['statut_actuel'] === 'En attente'): ?>
                         <div class="col-12 mt-2"><button class="btn btn-purple btn-sm w-100 font-monospace py-1" data-bs-toggle="modal" data-bs-target="#modalAffecter" onclick="document.getElementById('select_etudiant').value = '<?= $e['id_etudiant'] ?>'"><i class="bi bi-file-earmark-check me-1"></i> Affecter & Créer Convention</button></div>
                     <?php endif; ?>
@@ -237,7 +239,6 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
             <div id="<?= $collapseId ?>" class="collapse" data-bs-parent="#accordionSuivi_<?= $promoIdClean ?>">
                 <div class="p-3 bg-dark border-top border-secondary">
                     
-                    <!-- COMPOSANT INTERACTIF : FORMULAIRE DE SUIVI TERRAIN ET GESTION DES PROBLÈMES -->
                     <?php if ($stage_data): ?>
                         <h6 class="text-success fw-bold mb-2"><i class="bi bi-shield-check me-2"></i>Suivi de la Convention Active — <?= htmlspecialchars($stage_data['nom_societe']) ?></h6>
                         <form method="POST" action="" class="bg-intranet-dark p-3 rounded border border-secondary mb-4">
@@ -304,8 +305,22 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="icon" type="image/png" href="../images/logo-noir-blanc.png">
+    <script>
+        const themeEnregistre = localStorage.getItem('intranet-theme') || 'light';
+        if (themeEnregistre === 'dark') {
+            document.documentElement.classList.add('dark-theme-init');
+        }
+    </script>
 </head>
-<body class="d-flex flex-column min-vh-100 bg-dark text-white">
+<body id="page-body" class="d-flex flex-column min-vh-100 light-mode">
+    
+    <script>
+        if (localStorage.getItem('intranet-theme') === 'dark') {
+            const bodyEl = document.getElementById('page-body');
+            bodyEl.classList.remove('light-mode');
+            bodyEl.classList.add('dark-mode');
+        }
+    </script>
     <header class="navbar navbar-expand-lg bg-intranet-dark text-white p-0 py-2 border-bottom border-secondary">
         <div class="container-fluid px-4">
             <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4 border-end border-secondary" href="accueil-enseignant.php" style="height: 100%;">
@@ -320,29 +335,43 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
                 </div>
             </a>
             <div class="collapse navbar-collapse justify-content-between">
-                <ul class="navbar-nav mx-auto align-items-stretch border-start border-end border-secondary">
+                <ul class="navbar-nav mx-auto align-items-stretch border-start border-end border-secondary small">
                     <li class="nav-item">
-                        <a class="nav-link nav-link-custom d-flex align-items-center" href="accueil-enseignant.php">
-                            <i class="bi bi-house-door me-2 fs-4"></i> Accueil
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="accueil-enseignant.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-house-door me-2 fs-6"></i> Accueil
                         </a>
                     </li>
                     <li class="nav-item border-start border-secondary">
-                        <a class="nav-link nav-link-custom active d-flex align-items-center" href="suivi-stages.php">
-                            <i class="bi bi-person-video3 me-2 fs-4"></i> Suivi des Stages
+                        <a class="nav-link nav-link-custom active d-flex align-items-center" href="suivi-stages.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-person-video3 me-2 fs-6"></i> Suivi des Stages
+                        </a>
+                    </li>
+                    
+                    <?php if ($est_un_responsable): ?>
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="validation-stages.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-clipboard-check me-2 fs-6"></i> Demandes de Validation
+                        </a>
+                    </li>
+                    <?php endif; ?>
+                    
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="soutenances-enseignant.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-calendar-event me-2 fs-6"></i> Soutenances & Notes
                         </a>
                     </li>
                     <li class="nav-item border-start border-secondary">
-                        <a class="nav-link nav-link-custom d-flex align-items-center" href="soutenances-enseignant.php">
-                            <i class="bi bi-calendar-event me-2 fs-4"></i> Soutenances & Notes
-                        </a>
-                    </li>
-                    <li class="nav-item border-start border-secondary">
-                        <a class="nav-link nav-link-custom d-flex align-items-center" href="offres-enseignant.php">
-                            <i class="bi bi-grid-3x3-gap me-2 fs-4"></i> Catalogue Offres
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="offres-enseignant.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-grid-3x3-gap me-2 fs-6"></i> Catalogue Offres
                         </a>
                     </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
+                    <div class="pe-4">
+                        <button id="themeChangerBtn" class="theme-switch-btn" title="Changer le mode de couleur">
+                            <i id="iconeTheme" class="bi bi-moon-stars-fill text-white"></i>
+                        </button>
+                    </div>
                     <div class="d-flex align-items-center ps-4">
                         <a class="text-decoration-none" href="compte-enseignant.php">
                             <div class="text-end me-3">
@@ -375,15 +404,13 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
             </div>
         </div>
 
-        <!-- CHIPS STATISTIQUES GLOBALISÉES -->
         <div class="row g-3 mb-4 text-center">
-            <div class="col-md-3"><div class="card-custom p-3 border-secondary"><div class="small fw-bold text-muted-custom">EFFECTIF PROMO MMI1</div><h3 class="fw-bold m-0 mt-1"><?php echo $total_mmi1; ?> étudiants</h3></div></div>
+            <div class="col-md-3"><div class="card-custom p-3 border-secondary"><div class="small fw-bold text-muted-custom">EFFECTIF PROMO (MMI1)</div><h3 class="fw-bold m-0 mt-1"><?php echo $total_mmi1; ?> étudiants</h3></div></div>
             <div class="col-md-3"><div class="card-custom p-3 border-success"><div class="small fw-bold text-success">STAGES VALIDÉS (MMI1)</div><h3 class="fw-bold m-0 mt-1 text-success"><?php echo $total_valide; ?> affectés</h3></div></div>
             <div class="col-md-3"><div class="card-custom p-3 border-warning"><div class="small fw-bold text-warning">RECHERCHES EN COURS (MMI1)</div><h3 class="fw-bold m-0 mt-1 text-warning"><?php echo $total_en_recherche; ?> actifs</h3></div></div>
             <div class="col-md-3"><div class="card-custom p-3" style="border: 2px solid #ff0055;"><div class="small fw-bold" style="color: #ff0055;">ALERTES / PROBLÈMES TERRAIN</div><h3 class="fw-bold m-0 mt-1" style="color: #ff0055;"><?php echo $total_alertes; ?> urgences</h3></div></div>
         </div>
 
-        <!-- REPRIS DE L'ADMIN : FORMULAIRE DE RECHERCHE FILTRANTE -->
         <div class="card-custom p-3 mb-4 bg-intranet-dark border-secondary">
             <form method="GET" action="suivi-stages.php" class="row g-2 align-items-center">
                 <div class="col-md-3">
@@ -416,7 +443,6 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
             </form>
         </div>
 
-        <!-- REPRIS DE L'ADMIN : GRILLE DES TROIS COLONNES PAR PROMOTION -->
         <div class="row g-4">
             <?php if ($search_promo === 'toutes' || $search_promo === 'MMI 1'): ?>
                 <div class="<?= $column_class ?>">
@@ -459,9 +485,7 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
         </div>
     </main>
 
-    <!-- MODALS COMPLÈTES DE CONFIGURATION ACCESSIBLES POUR LE RESPONSABLE MMI1 -->
     <?php if ($est_responsable_mmi1): ?>
-    <!-- 1. MODAL SAISIE OFFRE DE STAGE -->
     <div class="modal fade" id="modalOffre" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form method="POST" class="modal-content bg-dark border-secondary text-white">
@@ -478,7 +502,6 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
         </div>
     </div>
 
-    <!-- 2. MODAL AFFECTATION ÉTUDIANT -->
     <div class="modal fade" id="modalAffecter" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form method="POST" class="modal-content bg-dark border-secondary text-white">
@@ -501,7 +524,6 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
         </div>
     </div>
 
-    <!-- 3. MODAL SAISIE RECHERCHE -->
     <div class="modal fade" id="modalRecherche" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form method="POST" class="modal-content bg-dark border-secondary text-white">
@@ -519,7 +541,6 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
         </div>
     </div>
 
-    <!-- 4. MODAL ORGANISATION DES ORAUX -->
     <div class="modal fade" id="modalOral" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form method="POST" class="modal-content bg-dark border-secondary text-white">
@@ -567,6 +588,32 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
             }
         }
         document.addEventListener("DOMContentLoaded", toggleSearchInputs);
+
+        const themeChangerBtn = document.getElementById('themeChangerBtn');
+        const iconeTheme = document.getElementById('iconeTheme');
+
+        function verifierIconeVisualisation() {
+            if (document.body.classList.contains('light-mode')) {
+                iconeTheme.className = 'bi bi-moon-stars-fill text-white'; 
+            } else {
+                iconeTheme.className = 'bi bi-sun-fill text-warning'; 
+            }
+        }
+
+        verifierIconeVisualisation();
+
+        themeChangerBtn.addEventListener('click', () => {
+            if (document.body.classList.contains('light-mode')) {
+                document.body.classList.remove('light-mode');
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('intranet-theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+                localStorage.setItem('intranet-theme', 'light');
+            }
+            verifierIconeVisualisation();
+        });
     </script>
 </body>
 </html>

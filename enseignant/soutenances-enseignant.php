@@ -1,6 +1,7 @@
 <?php
 session_start();
 
+// 1. Sécurité : Vérifier si l'utilisateur est connecté et est enseignant
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'enseignant') {
     header("Location: ../index.html");
     exit();
@@ -19,6 +20,9 @@ $id_enseignant = $_SESSION['user']['id_enseignant'];
 $nom_enseignant = $_SESSION['user']['nom'] ?? 'Nom';
 $prenom_enseignant = $_SESSION['user']['prenom'] ?? 'Prénom';
 $role_enseignant = $_SESSION['user']['role'] ?? 'Enseignant';
+
+// Vérification : l'enseignant connecté est-il responsable d'une promotion ?
+$est_un_responsable = (strpos($role_enseignant, 'Responsable-stage-MMI') !== false || strpos($role_enseignant, 'Responsable-Stage-MMI') !== false);
 
 $msg_success = "";
 $msg_error = "";
@@ -56,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_notes'])) {
     $note_rapport = !empty($_POST['note_rapport']) ? str_replace(',', '.', $_POST['note_rapport']) : null;
     $note_oral = !empty($_POST['note_oral']) ? str_replace(',', '.', $_POST['note_oral']) : null;
 
-    // SÉCURITÉ DOUBLE VERIFICATION : s'assurer côté serveur que l'enseignant fait bien partie du jury
+    // SÉCURITÉ DOUBLE VERIFICATION
     $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM soutenance WHERE id_soutenance = ? AND (id_enseignant_1 = ? OR id_enseignant_2 = ?)");
     $stmtCheck->execute([$id_soutenance, $id_enseignant, $id_enseignant]);
     
@@ -97,8 +101,22 @@ $liste_enseignants = $pdo->query("SELECT id_enseignant, nom, prenom FROM enseign
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="icon" type="image/png" href="../images/logo-noir-blanc.png">
+    <script>
+        const themeEnregistre = localStorage.getItem('intranet-theme') || 'light';
+        if (themeEnregistre === 'dark') {
+            document.documentElement.classList.add('dark-theme-init');
+        }
+    </script>
 </head>
-<body class="d-flex flex-column min-vh-100 bg-dark text-white">
+<body id="page-body" class="d-flex flex-column min-vh-100 light-mode">
+    
+    <script>
+        if (localStorage.getItem('intranet-theme') === 'dark') {
+            const bodyEl = document.getElementById('page-body');
+            bodyEl.classList.remove('light-mode');
+            bodyEl.classList.add('dark-mode');
+        }
+    </script>
     <header class="navbar navbar-expand-lg bg-intranet-dark text-white p-0 py-2 border-bottom border-secondary">
         <div class="container-fluid px-4">
             <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4 border-end border-secondary" href="accueil-enseignant.php" style="height: 100%;">
@@ -113,29 +131,43 @@ $liste_enseignants = $pdo->query("SELECT id_enseignant, nom, prenom FROM enseign
                 </div>
             </a>
             <div class="collapse navbar-collapse justify-content-between">
-                <ul class="navbar-nav mx-auto align-items-stretch border-start border-end border-secondary">
+                <ul class="navbar-nav mx-auto align-items-stretch border-start border-end border-secondary small">
                     <li class="nav-item">
-                        <a class="nav-link nav-link-custom d-flex align-items-center" href="accueil-enseignant.php">
-                            <i class="bi bi-house-door me-2 fs-4"></i> Accueil
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="accueil-enseignant.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-house-door me-2 fs-6"></i> Accueil
                         </a>
                     </li>
                     <li class="nav-item border-start border-secondary">
-                        <a class="nav-link nav-link-custom d-flex align-items-center" href="suivi-stages.php">
-                            <i class="bi bi-person-video3 me-2 fs-4"></i> Suivi des Stages
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="suivi-stages.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-person-video3 me-2 fs-6"></i> Suivi des Stages
+                        </a>
+                    </li>
+                    
+                    <?php if ($est_un_responsable): ?>
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="validation-stages.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-clipboard-check me-2 fs-6"></i> Demandes de Validation
+                        </a>
+                    </li>
+                    <?php endif; ?>
+                    
+                    <li class="nav-item border-start border-secondary">
+                        <a class="nav-link nav-link-custom active d-flex align-items-center" href="soutenances-enseignant.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-calendar-event me-2 fs-6"></i> Soutenances & Notes
                         </a>
                     </li>
                     <li class="nav-item border-start border-secondary">
-                        <a class="nav-link nav-link-custom active d-flex align-items-center" href="soutenances-enseignant.php">
-                            <i class="bi bi-calendar-event me-2 fs-4"></i> Soutenances & Notes
-                        </a>
-                    </li>
-                    <li class="nav-item border-start border-secondary">
-                        <a class="nav-link nav-link-custom d-flex align-items-center" href="offres-enseignant.php">
-                            <i class="bi bi-grid-3x3-gap me-2 fs-4"></i> Catalogue Offres
+                        <a class="nav-link nav-link-custom d-flex align-items-center" href="offres-enseignant.php" style="font-size: 0.85rem;">
+                            <i class="bi bi-grid-3x3-gap me-2 fs-6"></i> Catalogue Offres
                         </a>
                     </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
+                    <div class="pe-4">
+                        <button id="themeChangerBtn" class="theme-switch-btn" title="Changer le mode de couleur">
+                            <i id="iconeTheme" class="bi bi-moon-stars-fill text-white"></i>
+                        </button>
+                    </div>
                     <div class="d-flex align-items-center ps-4">
                         <a class="text-decoration-none" href="compte-enseignant.php">
                             <div class="text-end me-3">
@@ -319,5 +351,30 @@ function verifierCompteJury(cb) {
         cb.checked = false;
     }
 }
+const themeChangerBtn = document.getElementById('themeChangerBtn');
+const iconeTheme = document.getElementById('iconeTheme');
+
+function verifierIconeVisualisation() {
+    if (document.body.classList.contains('light-mode')) {
+        iconeTheme.className = 'bi bi-moon-stars-fill text-white'; 
+    } else {
+        iconeTheme.className = 'bi bi-sun-fill text-warning'; 
+    }
+}
+
+verifierIconeVisualisation();
+
+themeChangerBtn.addEventListener('click', () => {
+    if (document.body.classList.contains('light-mode')) {
+        document.body.classList.remove('light-mode');
+        document.body.classList.add('dark-mode');
+        localStorage.setItem('intranet-theme', 'dark');
+    } else {
+        document.body.classList.remove('dark-mode');
+        document.body.classList.add('light-mode');
+        localStorage.setItem('intranet-theme', 'light');
+    }
+    verifierIconeVisualisation();
+});
 </script>
 </html>
