@@ -21,6 +21,7 @@ Cette plateforme permet aux étudiants, enseignants et responsables de promotion
 ## 📂 Structure du projet
 ```text
 /
+├── admin/                # Pages de l'espace admin
 ├── images/               # Ressources graphiques (logos, photos)
 ├── php/                  # Logique serveur (connexion BDD, actions)
 ├── enseignant/           # Pages de l'espace enseignant
