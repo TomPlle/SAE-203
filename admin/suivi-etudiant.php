@@ -16,6 +16,16 @@ try {
     die("Erreur de connexion : " . $e->getMessage());
 }
 
+$id_admin = $_SESSION['user']['id_admin'];
+
+// --- AJOUTE CE BLOC POUR RÉPARER L'ERREUR EN ALLANT CHERCHER DANS LA BDD ---
+$stmtInfoAdmin = $pdo->prepare("SELECT nom, prenom FROM admin WHERE id_admin = ?");
+$stmtInfoAdmin->execute([$id_admin]);
+$admin_connecte = $stmtInfoAdmin->fetch(PDO::FETCH_ASSOC);
+
+$nom_admin = $admin_connecte['nom'] ?? 'Admin';
+$prenom_admin = $admin_connecte['prenom'] ?? 'Espace';
+
 // Initialisation des variables de recherche et filtres
 $search_type = isset($_GET['search_type']) ? $_GET['search_type'] : 'prenom';
 $search_query = isset($_GET['search_query']) ? trim($_GET['search_query']) : '';
@@ -222,8 +232,20 @@ $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col
                         </a>
                     </li>
                 </ul>
-                <div class="ms-2 pe-3">
-                    <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                <div class="d-flex align-items-center h-100 separator-right">
+                    <div class="d-flex align-items-center ps-4">
+                        <a class="text-decoration-none" href="compte-admin.php">
+                            <div class="text-end me-3">
+                                <div class="text-muted-custom" style="font-size: 0.7rem;"><center>Profil Principal</center></div>
+                                <div class="fw-bold text-white text-uppercase" style="font-size: 0.95rem;">
+                                    <?= htmlspecialchars($prenom_admin . ' ' . $nom_admin) ?>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="ms-2 pe-3">
+                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                    </div>
                 </div>
             </div>
         </div>
