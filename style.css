@@ -158,5 +158,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .bg-student-tag {
     background-color: rgba(156, 163, 175, 0.15) !important;
-    
+    color: #d1d5db !important;
+    border: 1px solid rgba(156, 163, 175, 0.3);
 }
