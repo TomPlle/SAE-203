@@ -20,15 +20,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirm_password = $_POST['confirm_password'];
     $role = $_POST['role'];
 
+    // Vérification des mots de passe
     if ($password !== $confirm_password) {
         die("Les mots de passe ne correspondent pas.");
     }
 
     $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
+    // --- TRAITEMENT SELON LE RÔLE ---
+
     if ($role === 'etudiant') {
         $matricule = !empty($_POST['matricule']) ? htmlspecialchars($_POST['matricule']) : null;
-        $tel = !empty($_POST['tel_etudiant']) ? htmlspecialchars($_POST['tel_etudiant']) : null; // <--- CORRIGÉ
+        $tel = !empty($_POST['tel']) ? htmlspecialchars($_POST['tel']) : null; 
         $date_naiss = !empty($_POST['date_naiss']) ? $_POST['date_naiss'] : null;
         $adresse = !empty($_POST['adresse']) ? htmlspecialchars($_POST['adresse']) : null;
         $promo = !empty($_POST['promo']) ? htmlspecialchars($_POST['promo']) : null;
@@ -45,10 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$nom, $prenom, $email, $passwordHash, $role_enseignant]);
 
     } elseif ($role === 'maitre') {
-        $tel = !empty($_POST['tel_maitre']) ? htmlspecialchars($_POST['tel_maitre']) : null; // <--- CORRIGÉ
+        // Pour le maître de stage, on récupère le 'tel' du formulaire et l'email pro
+        $tel = !empty($_POST['tel']) ? htmlspecialchars($_POST['tel']) : null; 
         $email_pro = !empty($_POST['email_pro']) ? htmlspecialchars($_POST['email_pro']) : null;
         
-        $id_entreprise = 1; 
+        $id_entreprise = 1; // Valeur par défaut
 
         $stmt = $pdo->prepare("INSERT INTO responsable_de_stage (nom, prenom, tel, email_pro, password, id_entreprise, valide) VALUES (?, ?, ?, ?, ?, ?, 0)");
         $stmt->execute([$nom, $prenom, $tel, $email_pro, $passwordHash, $id_entreprise]);
@@ -56,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         die("Rôle non valide.");
     }
 
+    // Redirection après succès
     header("Location: ../index.html?success=account_created");
     exit();
 }

@@ -44,13 +44,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 }
 
 // 3. ENREGISTREMENT D'UNE NOUVELLE ÉTAPE (MODIFIÉ AVEC ENCLENCHEMENT LOGIQUE STAGE)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_demarche'])) {
-    $entreprise = trim($_POST['entreprise_cible']);
-    $date_contact = $_POST['date_contact'];
-    $type_action = trim($_POST['type_action']);
-    $reponse = $_POST['reponse'];
-
-    // 3. ENREGISTREMENT D'UNE NOUVELLE ÉTAPE (CORRIGÉ AVEC etat_validation)
+// 3. ENREGISTREMENT D'UNE NOUVELLE ÉTAPE (CORRIGÉ)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_demarche'])) {
     $entreprise = trim($_POST['entreprise_cible']);
     $date_contact = $_POST['date_contact'];
@@ -87,10 +81,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_demarche'])) 
                 $stmtStage->execute([$id_etudiant, $id_entreprise_creee, $sujet_stage, $desc_stage, $date_debut, $date_fin]);
 
                 // On force l'historique de l'élève à l'état tampon d'attente
-                $reponse = "En attente de validation responsable";
+                $reponse_historique = "En attente de validation responsable";
 
                 $stmtInsert = $pdo->prepare("INSERT INTO historique (entreprise_cible, date_contact, type_action, reponse, id_etudiant) VALUES (?, ?, ?, ?, ?)");
-                $stmtInsert->execute([$nom_ent, $date_contact, $type_action, $reponse, $id_etudiant]);
+                $stmtInsert->execute([$nom_ent, $date_contact, $type_action, $reponse_historique, $id_etudiant]);
 
                 $pdo->commit();
                 $message = "Fiche de stage soumise ! Votre démarche restera en attente jusqu'à l'approbation du responsable des stages.";
