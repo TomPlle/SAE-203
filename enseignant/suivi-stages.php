@@ -21,36 +21,20 @@ $nom_enseignant = $_SESSION['user']['nom'] ?? 'Nom';
 $prenom_enseignant = $_SESSION['user']['prenom'] ?? 'Prénom';
 $role_enseignant = $_SESSION['user']['role'] ?? 'Enseignant';
 
-// Vérification : l'enseignant connecté est-il responsable d'une promotion ?
-$est_un_responsable = (strpos($role_enseignant, 'Responsable-stage-MMI') !== false || strpos($role_enseignant, 'Responsable-Stage-MMI') !== false);
-
-// Variable de droits exclusifs
+// Identification isolée des rôles de responsables de promotion
 $est_responsable_mmi1 = ($role_enseignant === 'Responsable-Stage-MMI1' || $role_enseignant === 'Responsable-stage-MMI1');
+$est_responsable_mmi2 = ($role_enseignant === 'Responsable-Stage-MMI2' || $role_enseignant === 'Responsable-stage-MMI2');
+$est_responsable_mmi3 = ($role_enseignant === 'Responsable-Stage-MMI3' || $role_enseignant === 'Responsable-stage-MMI3');
+$est_un_responsable  = ($est_responsable_mmi1 || $est_responsable_mmi2 || $est_responsable_mmi3);
 
 $msg_success = "";
 $msg_error = "";
 
 // -------------------------------------------------------------------------
-// TRAITEMENTS DES SOUMISSIONS DE FORMULAIRES (RÉSERVÉS AU RESPONSABLE MMI1)
+// TRAITEMENTS DES SOUMISSIONS DE FORMULAIRES (AUTORISATIONS ADAPTÉES PAR PROMO)
 // -------------------------------------------------------------------------
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$est_responsable_mmi1) {
-    $msg_error = "Action refusée : Vous n'avez pas les droits Responsable-Stage-MMI1.";
-} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $est_responsable_mmi1) {
-
-    // ACTION A : Saisie d'une offre de stage
-    if (isset($_POST['action_creer_offre'])) {
-        $intitule = $_POST['intitule'];
-        $desc = $_POST['description'];
-        $comp = $_POST['competences'];
-        $duree = $_POST['duree'];
-        $lieu = $_POST['lieu'];
-        $remun = !empty($_POST['remuneration']) ? $_POST['remuneration'] : 0;
-        
-        $stmt = $pdo->prepare("INSERT INTO offre (intitule, description, competences, duree, lieu, remuneration, promotion_visee) VALUES (?, ?, ?, ?, ?, ?, 'MMI1')");
-        $stmt->execute([$intitule, $desc, $comp, $duree, $lieu, $remun]);
-        $msg_success = "Nouvelle offre de stage publiée pour les MMI1 !";
-    }
-
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
     // ACTION B : Affecter un étudiant à un stage
     if (isset($_POST['action_affecter_etudiant'])) {
         $id_et = $_POST['id_etudiant'];
@@ -61,43 +45,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$est_responsable_mmi1) {
         $dt_deb = $_POST['date_deb'];
         $dt_fin = $_POST['date_fin'];
 
-        $stmt = $pdo->prepare("INSERT INTO stage (num_convention, sujet, date_deb, date_fin, etat_validation, id_etudiant, id_enseignant, id_entreprise, id_responsable) VALUES (?, ?, ?, ?, 'En cours', ?, ?, ?, ?)");
-        $stmt->execute([$num_conv, $sujet, $dt_deb, $dt_fin, $id_et, $id_enseignant, $id_ent, $id_resp]);
-        
-        $pdo->prepare("UPDATE etudiant SET valide = 1 WHERE id_etudiant = ?")->execute([$id_et]);
-        $pdo->prepare("UPDATE historique SET reponse = 'Validé' WHERE id_etudiant = ? AND reponse = 'En attente' ORDER BY id_recherche DESC LIMIT 1")->execute([$id_et]);
-        
-        $msg_success = "Étudiant affecté et convention de stage créée !";
+        // Extraction de la promo de l'étudiant
+        $stmtCheckPromo = $pdo->prepare("SELECT promo FROM etudiant WHERE id_etudiant = ?");
+        $stmtCheckPromo->execute([$id_et]);
+        $p_cible = $stmtCheckPromo->fetchColumn();
+
+        // Validation croisée des permissions de promotion
+        $droit_ok = false;
+        if (($p_cible === 'MMI 1' || $p_cible === 'MMI1') && $est_responsable_mmi1) $droit_ok = true;
+        if (($p_cible === 'MMI 2' || $p_cible === 'MMI2') && $est_responsable_mmi2) $droit_ok = true;
+        if (($p_cible === 'MMI 3' || $p_cible === 'MMI3') && $est_responsable_mmi3) $droit_ok = true;
+
+        if (!$droit_ok) {
+            $msg_error = "Action refusée : Vous n'avez pas les privilèges pour la promotion " . htmlspecialchars($p_cible) . ".";
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO stage (num_convention, sujet, date_deb, date_fin, etat_validation, id_etudiant, id_enseignant, id_entreprise, id_responsable) VALUES (?, ?, ?, ?, 'En cours', ?, ?, ?, ?)");
+            $stmt->execute([$num_conv, $sujet, $dt_deb, $dt_fin, $id_et, $id_enseignant, $id_ent, $id_resp]);
+            
+            $pdo->prepare("UPDATE etudiant SET valide = 1 WHERE id_etudiant = ?")->execute([$id_et]);
+            $pdo->prepare("UPDATE historique SET reponse = 'Validé' WHERE id_etudiant = ? AND reponse = 'En attente' ORDER BY id_recherche DESC LIMIT 1")->execute([$id_et]);
+            $msg_success = "Étudiant affecté et convention créée !";
+        }
     }
 
-    // ACTION C : Saisir une démarche de recherche
-    if (isset($_POST['action_saisir_recherche'])) {
-        $id_et = $_POST['id_etudiant'];
-        $ent_cible = $_POST['entreprise_cible'];
-        $type_act = $_POST['type_action'];
-        $rep = $_POST['reponse'];
-        $dt_contact = date('Y-m-d');
-
-        $stmt = $pdo->prepare("INSERT INTO historique (entreprise_cible, date_contact, type_action, reponse, id_etudiant) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$ent_cible, $dt_contact, $type_act, $rep, $id_et]);
-        $msg_success = "Nouvelle démarche de recherche ajoutée.";
-    }
-
-    // ACTION D : Organisation d'un oral
-    if (isset($_POST['action_planifier_oral'])) {
-        $id_et = $_POST['id_etudiant'];
-        $dt_sout = $_POST['date_soutenance'];
-        $hr_sout = $_POST['heure_soutenance'];
-        $salle = $_POST['salle'];
-        $j1 = $_POST['jury1'];
-        $j2 = $_POST['jury2'];
-
-        $stmt = $pdo->prepare("INSERT INTO soutenance (date, heure, salle, id_etudiant, id_enseignant_1, id_enseignant_2) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$dt_sout, $hr_sout, $salle, $id_et, $j1, $j2]);
-        $msg_success = "Soutenance planifiée avec succès !";
-    }
-
-    // ACTION E : Mettre à jour le suivi ou signaler un problème
+    // ACTION E : Mettre à jour le suivi
     if (isset($_POST['action_update_suivi'])) {
         $id_stage = $_POST['id_stage'];
         $date_visite = !empty($_POST['date_visite']) ? $_POST['date_visite'] : null;
@@ -105,54 +76,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$est_responsable_mmi1) {
 
         $stmtUpdate = $pdo->prepare("UPDATE stage SET date_visite = ?, etat_validation = ? WHERE id_stage = ?");
         $stmtUpdate->execute([$date_visite, $etat_validation, $id_stage]);
-        $msg_success = "Dossier de suivi étudiant mis à jour !";
+        $msg_success = "Dossier étudiant mis à jour !";
     }
 }
 
 // -------------------------------------------------------------------------
-// INITIALISATION DES FILTRES DE LA PAGE (REPRIS DE L'ADMIN)
+// RE-CALCUL REQUIS ET SECTORISÉ DES STATS SÉCURISÉES PAR RÔLE CONNECTÉ
+// -------------------------------------------------------------------------
+if ($est_responsable_mmi1) {
+    $promo_target = "MMI1"; $promo_alt = "MMI 1"; $label_promo = "(MMI1)";
+} elseif ($est_responsable_mmi2) {
+    $promo_target = "MMI2"; $promo_alt = "MMI 2"; $label_promo = "(MMI2)";
+} elseif ($est_responsable_mmi3) {
+    $promo_target = "MMI3"; $promo_alt = "MMI 3"; $label_promo = "(MMI3)";
+} else {
+    $promo_target = null; $label_promo = "(GLOBAL)";
+}
+
+if ($promo_target) {
+    // Calcul de l'effectif total de la promo
+    $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM etudiant WHERE promo = ? OR promo = ?");
+    $stmtCount->execute([$promo_target, $promo_alt]);
+    $total_promo_stat = $stmtCount->fetchColumn();
+
+    // REQUÊTE SÉCURISÉE : Uniquement les stages de la promo dont l'état est explicitement 'Validé'
+    $stmtValide = $pdo->prepare("
+        SELECT COUNT(*) 
+        FROM stage s 
+        JOIN etudiant et ON s.id_etudiant = et.id_etudiant 
+        WHERE (et.promo = ? OR et.promo = ?) AND s.etat_validation = 'Validé'
+    ");
+    $stmtValide->execute([$promo_target, $promo_alt]);
+    $total_valide_stat = $stmtValide->fetchColumn();
+
+    $stmtAlt = $pdo->prepare("SELECT COUNT(*) FROM stage s JOIN etudiant et ON s.id_etudiant = et.id_etudiant WHERE (et.promo = ? OR et.promo = ?) AND s.etat_validation = 'Problème'");
+    $stmtAlt->execute([$promo_target, $promo_alt]);
+    $total_alertes_stat = $stmtAlt->fetchColumn();
+} else {
+    // Vue globale cumulée pour les enseignants classiques
+    $total_promo_stat = $pdo->query("SELECT COUNT(*) FROM etudiant")->fetchColumn();
+    
+    // REQUÊTE SÉCURISÉE GLOBALE : Somme de tous les stages validés de l'établissement
+    $total_valide_stat = $pdo->query("SELECT COUNT(*) FROM stage WHERE etat_validation = 'Validé'")->fetchColumn();
+    
+    $total_alertes_stat = $pdo->query("SELECT COUNT(*) FROM stage WHERE etat_validation = 'Problème'")->fetchColumn();
+}
+// Le nombre de personnes en recherche est égal à l'effectif moins ceux ayant un stage validé
+$total_en_recherche_stat = $total_promo_stat - $total_valide_stat;
+
+// -------------------------------------------------------------------------
+// INITIALISATION DES FILTRES DE LA PAGE ET SÉPARATION PAR COLONNE
 // -------------------------------------------------------------------------
 $search_type = isset($_GET['search_type']) ? $_GET['search_type'] : 'prenom';
 $search_query = isset($_GET['search_query']) ? trim($_GET['search_query']) : '';
 $search_status = isset($_GET['search_status']) ? $_GET['search_status'] : 'En attente';
 $search_promo = isset($_GET['search_promo']) ? $_GET['search_promo'] : 'toutes';
 
-// Récupération de tous les étudiants validés (Structure Admin)
 $sql = "SELECT id_etudiant, matricule, nom, prenom, email, promo, gp_td, gp_tp FROM etudiant WHERE valide = 1 ORDER BY nom ASC, prenom ASC";
-$stmtAll = $pdo->query($sql);
-$tous_les_etudiants = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
+$tous_les_etudiants = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
-$mmi1 = [];
-$mmi2 = [];
-$mmi3 = [];
+$mmi1 = []; $mmi2 = []; $mmi3 = [];
 
-// Filtrage et distribution par promotion
 foreach ($tous_les_etudiants as $e) {
     $stmtDernier = $pdo->prepare("SELECT reponse FROM historique WHERE id_etudiant = ? ORDER BY date_contact DESC, id_recherche DESC LIMIT 1");
     $stmtDernier->execute([$e['id_etudiant']]);
     $derniere_action = $stmtDernier->fetch(PDO::FETCH_ASSOC);
     
-    $statut_actuel = "En attente"; 
-    if ($derniere_action) {
-        $statut_actuel = $derniere_action['reponse'];
-    }
+    $statut_actuel = "En attente";  
+    if ($derniere_action) { $statut_actuel = $derniere_action['reponse']; }
     $e['statut_actuel'] = $statut_actuel;
 
     $valide_critere = false;
     if ($search_type === 'statut') {
-        if ($statut_actuel === $search_status) {
-            $valide_critere = true;
-        }
+        if ($statut_actuel === $search_status) { $valide_critere = true; }
     } else {
         if (!empty($search_query)) {
-            if ($search_type === 'prenom' && stripos($e['prenom'], $search_query) !== false) {
-                $valide_critere = true;
-            } elseif ($search_type === 'matricule' && stripos($e['matricule'], $search_query) !== false) {
-                $valide_critere = true;
-            }
-        } else {
-            $valide_critere = true;
-        }
+            if ($search_type === 'prenom' && stripos($e['prenom'], $search_query) !== false) { $valide_critere = true; }
+            elseif ($search_type === 'matricule' && stripos($e['matricule'], $search_query) !== false) { $valide_critere = true; }
+        } else { $valide_critere = true; }
     }
 
     if ($valide_critere) {
@@ -162,32 +163,22 @@ foreach ($tous_les_etudiants as $e) {
     }
 }
 
-// Compteurs statistiques pour les Chips globales
-$total_mmi1 = $pdo->query("SELECT COUNT(*) FROM etudiant WHERE promo = 'MMI 1' OR promo = 'MMI1'")->fetchColumn();
-$total_valide = $pdo->query("SELECT COUNT(*) FROM etudiant WHERE (promo = 'MMI 1' OR promo = 'MMI1') AND valide = 1")->fetchColumn();
-$total_en_recherche = $total_mmi1 - $total_valide;
-$total_alertes = $pdo->query("SELECT COUNT(*) FROM stage s JOIN etudiant et ON s.id_etudiant = et.id_etudiant WHERE s.etat_validation = 'Problème'")->fetchColumn();
-
-// Listes pour alimenter les listes déroulantes des Modals
-$liste_etudiants_mmi1 = $pdo->query("SELECT id_etudiant, nom, prenom FROM etudiant WHERE promo='MMI 1' OR promo='MMI1' ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+$liste_etudiants_mmi1 = $pdo->query("SELECT id_etudiant, nom, prenom FROM etudiant ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 $liste_entreprises = $pdo->query("SELECT id_entreprise, nom_societe FROM `entreprise` ORDER BY nom_societe ASC")->fetchAll(PDO::FETCH_ASSOC);
 $liste_tuteurs_pro = $pdo->query("SELECT id_responsable, nom, prenom FROM responsable_de_stage ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 $liste_profs = $pdo->query("SELECT id_enseignant, nom, prenom FROM enseignant ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-// Gestion de la mise en page
 $column_class = ($search_promo === 'toutes') ? 'col-xl-4 col-md-6 col-12' : 'col-12';
 
 // -------------------------------------------------------------------------
-// REPRIS DE L'ADMIN : FONCTION UTILITAIRE MODIFIÉE POUR INTÉGRER LA GESTION DES STAGES
+// COMPOSANT ELEMENT ACCORDEON REPRIS DE L'ADMIN ET SECURISE AVEC DROITS ENSEIGNANTS
 // -------------------------------------------------------------------------
 function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsable_mmi1) {
     foreach ($liste_etudiants as $e) {
-        // 1. Récupération historique
         $stmtDemarches = $pdo->prepare("SELECT date_contact, entreprise_cible, type_action, reponse FROM historique WHERE id_etudiant = ? ORDER BY date_contact DESC, id_recherche DESC");
         $stmtDemarches->execute([$e['id_etudiant']]);
         $demarches = $stmtDemarches->fetchAll(PDO::FETCH_ASSOC);
         
-        // 2. Récupération données du stage s'il existe
         $stmtStage = $pdo->prepare("SELECT s.*, ent.nom_societe, r.nom AS r_nom, r.prenom AS r_prenom FROM stage s LEFT JOIN entreprise ent ON s.id_entreprise = ent.id_entreprise LEFT JOIN responsable_de_stage r ON s.id_responsable = r.id_responsable WHERE s.id_etudiant = ? LIMIT 1");
         $stmtStage->execute([$e['id_etudiant']]);
         $stage_data = $stmtStage->fetch(PDO::FETCH_ASSOC);
@@ -196,7 +187,6 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
         $headingId = "heading_" . $e['id_etudiant'];
         $promoIdClean = str_replace(' ', '', $e['promo']);
 
-        // Gestion de la couleur des badges selon l'état d'alerte ou de validation
         if ($stage_data && $stage_data['etat_validation'] === 'Problème') {
             $card_badge_class = "bg-danger text-white";
             $status_text = "🚨 Problème signalé";
@@ -276,7 +266,7 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
                         <div class="text-center py-2 text-muted-custom small"><i class="bi bi-info-circle me-1"></i> Aucune démarche déclarée.</div>
                     <?php else: ?>
                         <div class="d-flex flex-column gap-2">
-                            <?php foreach ($demarches as $d): 
+                            <?php foreach ($demarches as $d):  
                                 $b_class = ($d['reponse'] === 'Validé' || $d['reponse'] === 'Convention signée') ? "bg-success text-white" : (($d['reponse'] === 'Refusé') ? "bg-danger text-white" : "bg-warning text-dark");
                             ?>
                                 <div class="p-2 rounded bg-intranet-dark border border-secondary shadow-sm" style="font-size: 0.85rem;">
@@ -304,13 +294,7 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="icon" type="image/png" href="../images/logo-noir-blanc.png">
-    <script>
-        const themeEnregistre = localStorage.getItem('intranet-theme') || 'light';
-        if (themeEnregistre === 'dark') {
-            document.documentElement.classList.add('dark-theme-init');
-        }
-    </script>
+    <link class="intranet-favicon" rel="icon" type="image/png" href="../images/logo-noir-blanc.png">
 </head>
 <body id="page-body" class="d-flex flex-column min-vh-100 light-mode">
     
@@ -326,15 +310,12 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
             <a class="navbar-brand text-white d-flex align-items-center m-0 p-0 pe-4 border-end border-secondary" href="accueil-enseignant.php" style="height: 100%;">
                 <img src="../images/logo-noir-blanc.png" alt="Logo" class="me-3" style="height: 50px; width: auto;"> 
                 <div class="lh-sm">
-                    <div class="fw-bold text-uppercase" style="font-size: 1.1rem; letter-spacing: 1px;">
-                        GESTIONNAIRE DE STAGE
-                    </div>
-                    <div class="text-muted-custom" style="font-size: 0.8rem; letter-spacing: 0.5px;">
-                        UNIVERSITÉ GUSTAVE EIFFEL
-                    </div>
+                    <div class="fw-bold text-uppercase" style="font-size: 1.1rem; letter-spacing: 1px;">GESTIONNAIRE DE STAGE</div>
+                    <div class="text-muted-custom" style="font-size: 0.8rem; letter-spacing: 0.5px;">UNIVERSITÉ GUSTAVE EIFFEL</div>
                 </div>
             </a>
             <div class="collapse navbar-collapse justify-content-between">
+                <!-- MODIFICATION ICI : font-size fixée à 0.85rem pour tous les liens de navigation -->
                 <ul class="navbar-nav mx-auto align-items-stretch border-start border-end border-secondary small">
                     <li class="nav-item">
                         <a class="nav-link nav-link-custom d-flex align-items-center" href="accueil-enseignant.php" style="font-size: 0.85rem;">
@@ -367,11 +348,13 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
                     </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
+                    
                     <div class="pe-4">
                         <button id="themeChangerBtn" class="theme-switch-btn" title="Changer le mode de couleur">
                             <i id="iconeTheme" class="bi bi-moon-stars-fill text-white"></i>
                         </button>
                     </div>
+
                     <div class="d-flex align-items-center ps-4">
                         <a class="text-decoration-none" href="compte-enseignant.php">
                             <div class="text-end me-3">
@@ -404,11 +387,12 @@ function afficher_liste_suivi_responsable($liste_etudiants, $pdo, $est_responsab
             </div>
         </div>
 
+        <!-- BLOC DE STATISTIQUES RE-COMPILÉ ET CLOISONNÉ -->
         <div class="row g-3 mb-4 text-center">
-            <div class="col-md-3"><div class="card-custom p-3 border-secondary"><div class="small fw-bold text-muted-custom">EFFECTIF PROMO (MMI1)</div><h3 class="fw-bold m-0 mt-1"><?php echo $total_mmi1; ?> étudiants</h3></div></div>
-            <div class="col-md-3"><div class="card-custom p-3 border-success"><div class="small fw-bold text-success">STAGES VALIDÉS (MMI1)</div><h3 class="fw-bold m-0 mt-1 text-success"><?php echo $total_valide; ?> affectés</h3></div></div>
-            <div class="col-md-3"><div class="card-custom p-3 border-warning"><div class="small fw-bold text-warning">RECHERCHES EN COURS (MMI1)</div><h3 class="fw-bold m-0 mt-1 text-warning"><?php echo $total_en_recherche; ?> actifs</h3></div></div>
-            <div class="col-md-3"><div class="card-custom p-3" style="border: 2px solid #ff0055;"><div class="small fw-bold" style="color: #ff0055;">ALERTES / PROBLÈMES TERRAIN</div><h3 class="fw-bold m-0 mt-1" style="color: #ff0055;"><?php echo $total_alertes; ?> urgences</h3></div></div>
+            <div class="col-md-3"><div class="card-custom p-3 border-secondary"><div class="small fw-bold text-muted-custom">EFFECTIF PROMO <?= $label_promo ?></div><h3 class="fw-bold m-0 mt-1"><?php echo $total_promo_stat; ?> étudiants</h3></div></div>
+            <div class="col-md-3"><div class="card-custom p-3 border-success"><div class="small fw-bold text-success">STAGES VALIDÉS <?= $label_promo ?></div><h3 class="fw-bold m-0 mt-1 text-success"><?php echo $total_valide_stat; ?> validés</h3></div></div>
+            <div class="col-md-3"><div class="card-custom p-3 border-warning"><div class="small fw-bold text-warning">RECHERCHES EN COURS <?= $label_promo ?></div><h3 class="fw-bold m-0 mt-1 text-warning"><?php echo $total_en_recherche_stat; ?> actifs</h3></div></div>
+            <div class="col-md-3"><div class="card-custom p-3" style="border: 2px solid #ff0055;"><div class="small fw-bold" style="color: #ff0055;">ALERTES / PROBLÈMES TERRAIN</div><h3 class="fw-bold m-0 mt-1" style="color: #ff0055;"><?php echo $total_alertes_stat; ?> urgences</h3></div></div>
         </div>
 
         <div class="card-custom p-3 mb-4 bg-intranet-dark border-secondary">

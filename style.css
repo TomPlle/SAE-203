@@ -241,18 +241,17 @@ body.light-mode .column-promo-wrapper { background-color: #ffffff !important; }
 body.light-mode .nav-tabs .badge,
 body.light-mode main .badge.bg-purple,
 body.light-mode main .badge {
-    background-color: #6d28d9 !important; /* Maintient le fond violet ou ajuste la couleur si tu préfères */
-    color: #ffffff !important; /* S'il est sur fond violet, le blanc reste lisible. */
+    background-color: #6d28d9 !important; 
+    color: #ffffff !important; 
 }
 
 /* SI les badges deviennent blancs avec l'ancien CSS et que l'écriture devient invisible : */
 body.light-mode .nav-tabs .nav-item .badge {
-    background-color: #f3f4f6 !important; /* Met un fond gris clair très propre derrière le chiffre */
-    color: #111827 !important;            /* Force le chiffre en noir/sombre */
-    border: 1px solid #d1d5db !important;  /* Ajoute une petite bordure de séparation */
+    background-color: #f3f4f6 !important; 
+    color: #111827 !important;            
+    border: 1px solid #d1d5db !important;  
 }
 
-/* Force également les compteurs globaux du dashboard ou des onglets s'ils utilisent des balises span ou code */
 body.light-mode .badge span,
 body.light-mode .nav-link .badge {
     color: #111827 !important;
@@ -271,7 +270,7 @@ body.light-mode .card-custom .badge.bg-success {
 /* Statut : En attente (JAUNE) */
 body.light-mode .card-custom .badge.bg-warning {
     background-color: #ffc107 !important;
-    color: #111827 !important; /* Texte noir pour le contraste sur le jaune */
+    color: #111827 !important; 
 }
 
 /* Statut : Refusé (ROUGE) */
@@ -293,6 +292,54 @@ body.dark-mode .role-fields-box {
 }
 
 body.light-mode .role-fields-box {
-    background-color: #f8fafc !important; /* Gris très clair harmonieux */
-    border: 1px dashed #cbd5e1 !important; /* Bordure discrète */
+    background-color: #f8fafc !important; 
+    border: 1px dashed #cbd5e1 !important; 
+}
+
+/* ==========================================================================
+   MODIFICATION CORRECTIONS EN-TÊTE ACCORDÉONS ÉTUDIANTS (SUIVI DES STAGES)
+   ========================================================================== */
+body.light-mode .card-custom .bg-intranet-dark {
+    background-color: #ffffff !important; 
+}
+
+body.light-mode .card-custom .bg-intranet-dark .text-light,
+body.light-mode .card-custom .bg-intranet-dark .text-white,
+body.light-mode .card-custom .bg-intranet-dark .fw-bold {
+    color: #111827 !important; 
+}
+
+body.light-mode .card-custom .bg-intranet-dark .text-muted-custom {
+    color: #4b5563 !important; 
+}
+
+/* AJOUT CORRECTIF ANIMATION : Blanchit instantanément la zone déroulante 
+   PENDANT l'animation Bootstrap (.collapsing) pour supprimer le flash noir d'origine
+*/
+body.light-mode .collapsing,
+body.light-mode .collapse .bg-dark,
+body.light-mode .card-custom .collapse .p-3,
+body.light-mode .card-custom .inner-collapse-body {
+    background-color: #f8f9fa !important; 
+    border-top: 1px solid #e5e7eb !important;
+}
+
+/* Blanchit les boîtes de sous-cartes d'historique pendant l'animation */
+body.light-mode .collapsing .bg-intranet-dark,
+body.light-mode .collapse .bg-intranet-dark,
+body.light-mode .card-custom .collapse .bg-intranet-dark {
+    background-color: #ffffff !important; 
+    border: 1px solid #d1d5db !important;
+}
+
+/* Force les écritures de l'historique en noir même pendant l'ouverture */
+body.light-mode .collapsing .text-white-50,
+body.light-mode .collapsing .text-light,
+body.light-mode .collapsing .text-muted-custom,
+body.light-mode .collapse .text-white-50,
+body.light-mode .collapse .text-light,
+body.light-mode .collapse .text-muted-custom,
+body.light-mode .collapse h5,
+body.light-mode .collapse h6 {
+    color: #212529 !important; 
 }
