@@ -22,27 +22,26 @@ $nom_etudiant = isset($_SESSION['user']['nom']) ? $_SESSION['user']['nom'] : 'No
 $prenom_etudiant = isset($_SESSION['user']['prenom']) ? $_SESSION['user']['prenom'] : 'Prénom';
 
 // 1. Récupérer la promotion de l'étudiant pour filtrer les offres
-// (On nettoie la chaîne pour correspondre aux ENUM 'MMI1', 'MMI2', 'MMI3' de la table offre)
 $stmtPromo = $pdo->prepare("SELECT promo FROM etudiant WHERE id_etudiant = ?");
 $stmtPromo->execute([$id_etudiant]);
 $promo_brute = $stmtPromo->fetchColumn();
-$promo_filtre = str_replace(' ', '', $promo_brute); // Transforme "MMI 2" ou "MMI 2" en "MMI2"
+$promo_filtre = str_replace(' ', '', $promo_brute); // Transforme "MMI 1" en "MMI1"
 
 // 2. Récupérer les offres correspondantes à sa promotion
 $stmtOffres = $pdo->prepare("SELECT * FROM offre WHERE promotion_visee = ? ORDER BY id_offre DESC");
 $stmtOffres->execute([$promo_filtre]);
 $offres = $stmtOffres->fetchAll(PDO::FETCH_ASSOC);
 
-// 3. Traitement optionnel de postulation (si l'étudiant clique sur "Postuler")
+// 3. Traitement de postulation (si l'étudiant clique sur "Postuler")
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_postuler'])) {
     $id_offre_cible = $_POST['id_offre'];
     $entreprise_nom = $_POST['entreprise_nom'];
     $date_aujourdhui = date('Y-m-d');
 
-    // On ajoute automatiquement la démarche dans l'historique de l'étudiant
+    // CORRECTION : Utilisation du statut d'attente prof pour s'afficher sur sa page de validation
     $stmtPostuler = $pdo->prepare("
         INSERT INTO historique (entreprise_cible, date_contact, type_action, reponse, id_etudiant) 
-        VALUES (?, ?, 'Candidature Intranet', 'En attente', ?)
+        VALUES (?, ?, 'Candidature Intranet', 'En attente de validation responsable', ?)
     ");
     $stmtPostuler->execute([$entreprise_nom, $date_aujourdhui, $id_etudiant]);
     
@@ -71,7 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_postuler'])) {
 </head>
 <body id="page-body" class="d-flex flex-column min-vh-100 light-mode">
     
-    <!-- APPLICATION IMMÉDIATE DU MODE SOMBRE SI BESOIN -->
     <script>
         if (localStorage.getItem('intranet-theme') === 'dark') {
             const bodyEl = document.getElementById('page-body');
@@ -87,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_postuler'])) {
                     <div class="fw-bold text-uppercase" style="font-size: 1.1rem; letter-spacing: 1px;">
                         GESTIONNAIRE DE STAGE
                     </div>
-                    <div class="text-muted-custom" style="font-size: 0.8rem; letter-spacing: 0.5px;">
+                    <div class="text-muted-custom" style="font-size: 0.80rem; letter-spacing: 0.5px;">
                         UNIVERSITÉ GUSTAVE EIFFEL
                     </div>
                 </div>
@@ -111,7 +109,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_postuler'])) {
                     </li>
                 </ul>
                 <div class="d-flex align-items-center h-100 separator-right">
-                    <!-- BOUTON DU COMMUTATEUR -->
                     <div class="pe-4">
                         <button id="themeChangerBtn" class="theme-switch-btn" title="Changer le mode de couleur">
                             <i id="iconeTheme" class="bi bi-moon-stars-fill text-white"></i>
@@ -218,34 +215,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_postuler'])) {
         </div>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-        
-        <!-- SCRIPT DE GESTION DU CLIC THEME -->
-        <script>
-            const themeChangerBtn = document.getElementById('themeChangerBtn');
-            const iconeTheme = document.getElementById('iconeTheme');
+    <script>
+        const themeChangerBtn = document.getElementById('themeChangerBtn');
+        const iconeTheme = document.getElementById('iconeTheme');
 
-            function verifierIconeVisualisation() {
-                if (document.body.classList.contains('light-mode')) {
-                    iconeTheme.className = 'bi bi-moon-stars-fill text-white'; 
-                } else {
-                    iconeTheme.className = 'bi bi-sun-fill text-warning'; 
-                }
+        function verifierIconeVisualisation() {
+            if (document.body.classList.contains('light-mode')) {
+                iconeTheme.className = 'bi bi-moon-stars-fill text-white'; 
+            } else {
+                iconeTheme.className = 'bi bi-sun-fill text-warning'; 
             }
+        }
+        verifierIconeVisualisation();
 
+        themeChangerBtn.addEventListener('click', () => {
+            if (document.body.classList.contains('light-mode')) {
+                document.body.classList.remove('light-mode');
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('intranet-theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+                localStorage.setItem('intranet-theme', 'light');
+            }
             verifierIconeVisualisation();
-
-            themeChangerBtn.addEventListener('click', () => {
-                if (document.body.classList.contains('light-mode')) {
-                    document.body.classList.remove('light-mode');
-                    document.body.classList.add('dark-mode');
-                    localStorage.setItem('intranet-theme', 'dark');
-                } else {
-                    document.body.classList.remove('dark-mode');
-                    document.body.classList.add('light-mode');
-                    localStorage.setItem('intranet-theme', 'light');
-                }
-                verifierIconeVisualisation();
-            });
-        </script>
-    </body>
+        });
+    </script>
+</body>
 </html>

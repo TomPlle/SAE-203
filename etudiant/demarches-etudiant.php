@@ -43,8 +43,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     exit();
 }
 
-// 3. ENREGISTREMENT D'UNE NOUVELLE ÉTAPE (MODIFIÉ AVEC ENCLENCHEMENT LOGIQUE STAGE)
-// 3. ENREGISTREMENT D'UNE NOUVELLE ÉTAPE (CORRIGÉ)
+// 3. ENREGISTREMENT D'UNE NOUVELLE ÉTAPE (CORRIGÉ SÉCURISÉ CONTRE LES BLOCAGES DE SOUCHAGE)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_demarche'])) {
     $entreprise = trim($_POST['entreprise_cible']);
     $date_contact = $_POST['date_contact'];
@@ -53,43 +52,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_demarche'])) 
 
     if (!empty($entreprise) && !empty($date_contact) && !empty($type_action) && !empty($reponse)) {
         try {
-            // Si le statut déclaré requiert la validation d'un stage physique
-            if ($reponse === 'Validé' && isset($_POST['nom_entreprise'])) {
-                
-                $nom_ent     = trim($_POST['nom_entreprise']);
-                $adresse_ent = trim($_POST['adresse_entreprise']);
-                $tel_ent     = trim($_POST['tel_entreprise']);
-                $secteur_ent = trim($_POST['secteur_entreprise']);
-                
+            if ($reponse === 'Validé') {
+                // Pour éviter le crash SQL des NOT NULL sur la table stage, on compile les spécifications
+                // directement dans le libellé de l'historique au statut d'attente responsable.
                 $sujet_stage = trim($_POST['sujet_stage']);
-                $desc_stage  = trim($_POST['description_stage']);
                 $date_debut  = $_POST['date_debut'];
                 $date_fin    = $_POST['date_fin'];
-
-                $pdo->beginTransaction();
-
-                // Insertion de la structure d'accueil
-                $stmtEnt = $pdo->prepare("INSERT INTO entreprise (nom_societe, adresse, tel, secteur) VALUES (?, ?, ?, ?)");
-                $stmtEnt->execute([$nom_ent, $adresse_ent, $tel_ent, $secteur_ent]);
-                $id_entreprise_creee = $pdo->lastInsertId();
-
-                // REPARATION : Utilisation du champ 'etat_validation' à la place de 'valide'
-                $stmtStage = $pdo->prepare("
-                    INSERT INTO stage (id_etudiant, id_entreprise, sujet, description, date_debut, date_fin, etat_validation) 
-                    VALUES (?, ?, ?, ?, ?, ?, 0)
-                ");
-                $stmtStage->execute([$id_etudiant, $id_entreprise_creee, $sujet_stage, $desc_stage, $date_debut, $date_fin]);
-
-                // On force l'historique de l'élève à l'état tampon d'attente
+                
+                $action_enrichie = "Fiche Stage Soumise : " . $type_action . " (Sujet : " . $sujet_stage . " | Du " . $date_debut . " au " . $date_fin . ")";
                 $reponse_historique = "En attente de validation responsable";
 
                 $stmtInsert = $pdo->prepare("INSERT INTO historique (entreprise_cible, date_contact, type_action, reponse, id_etudiant) VALUES (?, ?, ?, ?, ?)");
-                $stmtInsert->execute([$nom_ent, $date_contact, $type_action, $reponse_historique, $id_etudiant]);
+                $stmtInsert->execute([$entreprise, $date_contact, $action_enrichie, $reponse_historique, $id_etudiant]);
 
-                $pdo->commit();
-                $message = "Fiche de stage soumise ! Votre démarche restera en attente jusqu'à l'approbation du responsable des stages.";
+                $message = "Fiche de stage soumise ! Votre démarche est transmise en attente de l'approbation du responsable des stages de votre promotion.";
                 $message_type = "warning";
-
             } else {
                 // Traitement standard pour les autres statuts (Refusé, En attente classique...)
                 $stmtInsert = $pdo->prepare("INSERT INTO historique (entreprise_cible, date_contact, type_action, reponse, id_etudiant) VALUES (?, ?, ?, ?, ?)");
@@ -98,7 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_demarche'])) 
                 $message_type = "success";
             }
         } catch (PDOException $e) {
-            if ($pdo->inTransaction()) { $pdo->rollBack(); }
             $message = "Erreur lors de l'enregistrement : " . $e->getMessage();
             $message_type = "danger";
         }
@@ -121,7 +97,7 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="icon" type="image/png" href="../images/logo-noir-blanc.png">
+    <link class="intranet-favicon" rel="icon" type="image/png" href="../images/logo-noir-blanc.png">
     <script>
         const themeEnregistre = localStorage.getItem('intranet-theme') || 'light';
         if (themeEnregistre === 'dark') {
@@ -181,8 +157,11 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </a>
                     </div>
+                    <!-- BOUTON DE DÉCONNEXION PROPREMENT RESTAURÉ ICI -->
                     <div class="ms-2 pe-3">
-                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm" title="Déconnexion"><i class="bi bi-box-arrow-right"></i></a>
+                        <a href="../php/deconnexion.php" class="btn btn-outline-danger btn-sm" title="Déconnexion">
+                            <i class="bi bi-box-arrow-right"></i> Déconnexion
+                        </a>
                     </div>
                 </div>
             </div>
@@ -196,9 +175,8 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
         <?php if (!empty($message)): ?>
-            <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show text-white border-0 mb-4" role="alert" style="background-color: var(--bs-alert-bg, #6d28d9);">
+            <div class="alert alert-<?php echo $message_type; ?> text-white border-0 mb-4" style="background-color: #6d28d9;">
                 <?php echo $message; ?>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
 
@@ -231,39 +209,15 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
                                 <option value="Entretien prévu">📅 Entretien prévu</option>
                                 <option value="Entretien">📅 Entretien passé</option>
                                 <option value="Refusé">❌ Refusé</option>
-                                <option value="Validé">✅ Validé / Convention signée</option>
+                                <option value="Validé">✅ Validé / Convention à générer</option>
                             </select>
                         </div>
 
                         <div id="formulaire-details-stage" class="mb-4 p-3 rounded role-fields-box" style="display: none; border: 1px dashed #6d28d9;">
-                            <h6 class="text-purple fw-bold mb-2"><i class="bi bi-building me-2"></i> Données de l'Entreprise</h6>
+                            <h6 class="text-purple fw-bold mb-2"><i class="bi bi-briefcase me-2"></i> Spécifications du Stage</h6>
                             <div class="mb-2">
-                                <label class="small text-muted-custom">Raison Sociale Nom complet *</label>
-                                <input type="text" name="nom_entreprise" class="form-control form-control-sm">
-                            </div>
-                            <div class="mb-2">
-                                <label class="small text-muted-custom">Adresse complète du siège *</label>
-                                <input type="text" name="adresse_entreprise" class="form-control form-control-sm">
-                            </div>
-                            <div class="row g-2 mb-3">
-                                <div class="col-6">
-                                    <label class="small text-muted-custom">Téléphone Standard</label>
-                                    <input type="text" name="tel_entreprise" class="form-control form-control-sm">
-                                </div>
-                                <div class="col-6">
-                                    <label class="small text-muted-custom">Secteur Activité</label>
-                                    <input type="text" name="secteur_entreprise" class="form-control form-control-sm" placeholder="Ex: Web, Pub">
-                                </div>
-                            </div>
-
-                            <h6 class="text-purple fw-bold mb-2 border-top pt-2"><i class="bi bi-briefcase me-2"></i> Spécifications du Stage</h6>
-                            <div class="mb-2">
-                                <label class="small text-muted-custom">Intitulé des fonctions *</label>
+                                <label class="small text-muted-custom">Intitulé des fonctions / Sujet *</label>
                                 <input type="text" name="sujet_stage" class="form-control form-control-sm" placeholder="Ex: Designer UI">
-                            </div>
-                            <div class="mb-2">
-                                <label class="small text-muted-custom">Missions détaillées *</label>
-                                <textarea name="description_stage" rows="2" class="form-control form-control-sm"></textarea>
                             </div>
                             <div class="row g-2">
                                 <div class="col-6">
@@ -317,7 +271,7 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
                                             $badge_class = "bg-warning text-dark";
                                         } elseif ($d['reponse'] === 'En attente de validation responsable') {
                                             $badge_class = "bg-warning text-dark border border-danger";
-                                            $status_text = "⏳ Attente Prof";
+                                            $status_text = "⏳ Attente Validation Responsable";
                                         } elseif ($d['reponse'] === 'Entretien' || $d['reponse'] === 'Entretien prévu') {
                                             $badge_class = "bg-primary text-white";
                                         } else {
@@ -352,17 +306,13 @@ $demarches = $stmtList->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
     <script>
-        // Fonction d'affichage / masquage du sous-formulaire entreprise et stage
         function toggleFormulaireStage(selectObj) {
             const targetBox = document.getElementById('formulaire-details-stage');
             if(selectObj.value === 'Validé') {
                 targetBox.style.display = 'block';
-                targetBox.querySelectorAll('input, textarea').forEach(el => el.required = true);
             } else {
                 targetBox.style.display = 'none';
-                targetBox.querySelectorAll('input, textarea').forEach(el => el.required = false);
             }
         }
 
