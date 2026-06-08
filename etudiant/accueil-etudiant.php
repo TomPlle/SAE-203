@@ -180,7 +180,7 @@ $dernieres_offres = $stmtDernieresOffres->fetchAll(PDO::FETCH_ASSOC);
                 <div class="card-custom p-3">
                     <h6 class="fw-bold"><i class="bi bi-play-circle me-2"></i> Tuto : Remplir sa convention</h6>
                     <div class="ratio ratio-16x9 mt-3">
-                        <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Tuto" style="border-radius: 8px;"></iframe>
+                        <iframe src="https://www.youtube.com/embed/0_TJUsmGc9U?si=FPfOYxyL5iXIKkrZ" title="Tuto" style="border-radius: 8px;"></iframe>
                     </div>
                 </div>
             </div>
